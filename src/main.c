@@ -7,15 +7,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "vector.h"
 
 /*
- * 2D vector.
+ * Particle type.
  */
-typedef struct vec2 {
-	double x;
-	double y;
-} vec2;
-
 typedef struct particle {
 	vec2 pos;
 	vec2 dir;
@@ -23,38 +19,6 @@ typedef struct particle {
 	double sediment;
 	double water;
 } particle;
-
-/*
- * return v0 + v1
- */
-vec2 add(vec2 v0, vec2 v1) {
-	return (vec2){v0.x + v1.x, v0.y + v1.y};
-}
-
-/*
- * return v0 - v1
- */
-vec2 sub(vec2 v0, vec2 v1) {
-	return (vec2){v0.x - v1.x, v0.y - v1.y};
-}
-
-/*
- * return s * v
- */
-vec2 scalar_mul(double s, vec2 v) {
-	return (vec2){s*v.x, s*v.y};
-}
-
-/*
- * normalizes vector.
- */
-void normalize(vec2 *vector) {
-	double x_2 = vector->x * vector->x;
-	double y_2 = vector->y * vector->y;
-	double len = sqrt(x_2 + y_2);
-	vector->x = vector->x / len;
-	vector->y = vector->y / len;
-}
 
 /*
  * Parses command line arguments.

@@ -1,13 +1,33 @@
-CC = gcc
-DEBUGFLAGS = -O2 -std=c99 -g -pg -Wall -pedantic 
-FLAGS = -O2 -std=c99 -Wall -pedantic 
-POST = -lm
+# project
+TARGET 	= erodr
+
+# compiler
+CC 		= gcc
+CFLAGS 	= -O2 -std=c99 -Wall -pedantic#-g -pg 
+
+# linker
+LINKER 	= gcc
+LFLAGS 	= -lm
+
+# directories
+OBJDIR 	= obj
+SRCDIR 	= src
+BINDIR 	= .
+
+SOURCES		:= $(wildcard $(SRCDIR)/*.c)
+INCLUDES 	:= $(wildcard $(SRCDIR)/*.h)
+OBJECTS 	:= $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
+
+# targets
+$(BINDIR)/$(TARGET): $(OBJECTS)
+	$(LINKER) $(OBJECTS) $(LFLAGS) -o $@
+
+$(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(OBJDIR):
+	mkdir $(OBJDIR)
 
 clean:
-	rm erodr
-
-debug:
-	$(CC) $(DEBUGFLAGS) src/main.c -o erodr $(POST)
-
-build:
-	$(CC) $(FLAGS) src/main.c -o erodr $(POST)
+	rm $(BINDIR)/$(TARGET)
+	rm $(OBJDIR)/*.o
