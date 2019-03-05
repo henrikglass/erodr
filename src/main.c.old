@@ -1,0 +1,77 @@
+#define FILEPATH_MAXLEN 512
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+/*
+ * Parses command line arguments.
+ */
+int parse_args(int argc, char *argv[], char *filepath) {
+	if (argc == 1) {
+		printf("Usage: erodr FILE\n");
+		return 1;	
+	} else {
+		filepath = strncpy(filepath, argv[1], FILEPATH_MAXLEN);
+		return 0;
+	}
+}
+
+/*
+ * Loads *.pgm into heightmap.
+ */
+int load_pgm(char *filepath, double *heightmap) {
+	FILE	*fp = fopen(filepath, "r");
+	int		w, h, p;
+	char	*token;
+	char	*line = NULL;
+	size_t	len = 0;
+	
+	if(fp == NULL)
+		return 1;
+	
+	// read width, height and precision
+	// TODO do properly
+	getline(&line, &len, fp); // magic
+	getline(&line, &len, fp); // comment
+	getline(&line, &len, fp); // width height
+	token = strtok(line, " ");
+	w = atoi(token);
+	token = strtok(NULL, " ");
+	h = atoi(token);
+	getline(&line, &len, fp); // precision
+	p = atoi(line);
+	
+	//printf("%d %d %d\n", width, height, precision);
+	//allocate heightmap
+	heightmap = (double*)malloc(sizeof(double) * h * w);
+	//double klax[2048][2048];
+
+	// read heightmap values
+	for(int i = 0; getline(&line, &len, fp) != EOF && i < w*h; i++) {
+		double h = atof(line);
+		heightmap[i] = h;
+	}
+
+	
+	printf("%f\n", heightmap[0]);
+
+	fclose(fp);
+	if(line)
+		free(line);
+
+	return 0;
+}
+
+/*
+ * Main.
+ */
+int main(int argc, char *argv[]) {
+	char filepath[FILEPATH_MAXLEN];
+	if(parse_args(argc, argv, filepath))
+		return 1;
+	double *heightmap = NULL;
+	if(load_pgm(filepath, heightmap))
+		return 1;
+	//printf("%f\n", heightmap[0]);
+}
