@@ -89,7 +89,7 @@ void construct_gradientmap(
 	   	int height
 ) {
 	//skip last line.
-	for(int i = 0; i < width*height - width; i++) {
+	for(int i = 0; i < width * (height - 1); i++) {
 		//skip last column.
 		if(i % width == width - 1) {
 			gradientmap[i] = (vec2){0,0};
@@ -97,18 +97,20 @@ void construct_gradientmap(
 		}
 		
 		// calculate slope at i. TODO improve w. sobel.
-		int r = i + 1;
-		int b = i + width;
-		gradientmap[i].x = heightmap[i] - heightmap[r];
-		gradientmap[i].y = heightmap[i] - heightmap[b];
+		int right = i + 1;
+		int below = i + width;
+		gradientmap[i].x = heightmap[right] - heightmap[i];
+		gradientmap[i].y = heightmap[below] - heightmap[i];
 	}
 }
 
 /*
  * Bilinearly interpolate vec2 value at (x, y) in map.
  */
-vec2 bil_interpolate_map_vec2(vec2 *map, double x, double y, int width) {
+vec2 bil_interpolate_map_vec2(vec2 *map, vec2 pos, int width) {
 	vec2 ul, ur, ll, lr, ipl_l, ipl_r;
+	double x = pos.x;
+	double y = pos.y;
 	int x_i = (int)x;
 	int y_i = (int)y;
 	double u = x - floor(x);
@@ -125,8 +127,10 @@ vec2 bil_interpolate_map_vec2(vec2 *map, double x, double y, int width) {
 /*
  * Bilinearly interpolate double value at (x, y) in map.
  */
-double bil_interpolate_map_double(double *map, double x, double y, int width) {
+double bil_interpolate_map_double(double *map, vec2 pos, int width) {
 	double u, v, ul, ur, ll, lr, ipl_l, ipl_r;
+	double x = pos.x;
+	double y = pos.y;
 	int x_i = (int)x;
 	int y_i = (int)y;
 	u = x - floor(x);
@@ -144,6 +148,7 @@ int n = 1;
 int ttl = 30;
 double p_enertia = 0.2;
 double p_capacity = 8;
+int p_radius = 8;
 void erode(double *heightmap, vec2 *gradientmap, int width, int height) {
 	// spawn randomized particles.
 	particle p[n];
@@ -159,25 +164,30 @@ void erode(double *heightmap, vec2 *gradientmap, int width, int height) {
 	// simulate each particle
 	for(int i = 0; i < n; i++) {
 		for(int j = 0; j < ttl; j++) {
-			// interpolate gradient g. 
-			double x = p[i].pos.x;
-			double y = p[i].pos.y;
-			vec2 g = bil_interpolate_map_vec2(gradientmap, x, y, width);
+			// interpolate gradient g and height h_old at p's position. 
+			vec2 pos_old = p[i].pos;
+			vec2 g = bil_interpolate_map_vec2(gradientmap, pos_old, width);
+			double h_old = bil_interpolate_map_double(heightmap, pos_old, width);
 
 			// calculate new dir vector
 			p[i].dir = sub(
 					scalar_mul(p_enertia, p[i].dir),
 					scalar_mul(1 - p_enertia, g)
 			);
-			normalize(&p[i].dir); // unsure
+			normalize(&p[i].dir);
 
 			//calculate new pos
 			p[i].pos = add(p[i].pos, p[i].dir);
 			
 			// check bounds
-			if(p[i].pos.x > width || p[i].pos.x < 0 ||
-					p[i].pos.y > height || p[i].pos.y < 0)
+			vec2 pos_new = p[i].pos;
+			if(pos_new.x > width || pos_new.x < 0 || 
+					pos_new.y > height || pos_new.y < 0)
 				break;
+
+			//new height
+			double h_new = bil_interpolate_map_double(heightmap, pos_new, width);
+			double h_diff = h_new - h_old;
 
 			printf("%g %g\n", p[i].pos.x, p[i].pos.y);		
 		}	
