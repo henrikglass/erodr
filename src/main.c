@@ -89,7 +89,7 @@ void construct_gradientmap(
 	   	int height
 ) {
 	//skip last line.
-	for(int i = 0; i < width*height; i++) {
+	for(int i = 0; i < width*height - width; i++) {
 		//skip last column.
 		if(i % width == width - 1) {
 			gradientmap[i] = (vec2){0,0};
