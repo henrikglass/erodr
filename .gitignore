@@ -6,4 +6,5 @@ kladd
 erodr
 *.o
 *.swp
-
+*.pgm
+*.png
