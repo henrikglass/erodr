@@ -104,6 +104,42 @@ void construct_gradientmap(
 	}
 }
 
+/*
+ * Bilinearly interpolate vec2 value at (x, y) in map.
+ */
+vec2 bil_interpolate_map_vec2(vec2 *map, double x, double y, int width) {
+	vec2 ul, ur, ll, lr, ipl_l, ipl_r;
+	int x_i = (int)x;
+	int y_i = (int)y;
+	double u = x - floor(x);
+	double v = y - floor(y);
+	ul = map[y_i*width + x_i];
+	ur = map[y_i*width + x_i + 1];
+	ll = map[(y_i + 1)*width + x_i];
+	lr = map[(y_i + 1)*width + x_i + 1];
+	ipl_l = add(scalar_mul(1 - v, ul), scalar_mul(v, ll));
+	ipl_r = add(scalar_mul(1 - v, ur), scalar_mul(v, lr));
+	return add(scalar_mul(1 - u, ipl_l), scalar_mul(u, ipl_r));
+}
+
+/*
+ * Bilinearly interpolate double value at (x, y) in map.
+ */
+double bil_interpolate_map_double(double *map, double x, double y, int width) {
+	double u, v, ul, ur, ll, lr, ipl_l, ipl_r;
+	int x_i = (int)x;
+	int y_i = (int)y;
+	u = x - floor(x);
+	v = y - floor(y);
+	ul = map[y_i*width + x_i];
+	ur = map[y_i*width + x_i + 1];
+	ll = map[(y_i + 1)*width + x_i];
+	lr = map[(y_i + 1)*width + x_i + 1];
+	ipl_l = (1 - v) * ul + v * ll;
+	ipl_r = (1 - v) * ur + v * lr;
+	return (1 - u) * ipl_l + u * ipl_r;	
+}
+
 int n = 1;
 int ttl = 30;
 double p_enertia = 0.2;
@@ -123,20 +159,11 @@ void erode(double *heightmap, vec2 *gradientmap, int width, int height) {
 	// simulate each particle
 	for(int i = 0; i < n; i++) {
 		for(int j = 0; j < ttl; j++) {
-			// bilinearly interpolate gradient g. 
-			double x, y, u, v;
-			x = p[i].pos.x;
-			y = p[i].pos.y;
-			u = x - floor(x);
-			v = y - floor(y);
-			vec2 ul = gradientmap[(int)y*width + (int)x];
-			vec2 ur = gradientmap[(int)y*width + (int)x + 1];
-			vec2 ll = gradientmap[((int)y + 1)*width + (int)x];
-			vec2 lr = gradientmap[((int)y + 1)*width + (int)x + 1];
-			vec2 ipl_l = add(scalar_mul(1 - v, ul), scalar_mul(v, ll));
-			vec2 ipl_r = add(scalar_mul(1 - v, ur), scalar_mul(v, lr));
-			vec2 g = add(scalar_mul(1 - u, ipl_l), scalar_mul(u, ipl_r));
-			
+			// interpolate gradient g. 
+			double x = p[i].pos.x;
+			double y = p[i].pos.y;
+			vec2 g = bil_interpolate_map_vec2(gradientmap, x, y, width);
+
 			// calculate new dir vector
 			p[i].dir = sub(
 					scalar_mul(p_enertia, p[i].dir),
