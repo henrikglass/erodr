@@ -260,7 +260,7 @@ void simulate_particles(double *hmap, vec2 *gmap, int width, int height) {
 			}
 			
 			// update `vel` and `water`
-			p[i].vel = sqrt(p[i].vel*p[].vel + h_diff*p_gravity);
+			p[i].vel = sqrt(p[i].vel*p[i].vel + h_diff*p_gravity);
 			p[i].water *= (1 - p_evaporation);
 
 			//printf("%g %g : %g\n", p[i].pos.x, p[i].pos.y, h_diff);
