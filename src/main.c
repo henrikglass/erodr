@@ -178,11 +178,11 @@ double bil_interpolate_map_double(const double *map, vec2 pos, int width) {
 }
 
 int n = 70000;
-int ttl = 30;
+int ttl = 100;
 int p_radius = 4;
 double p_enertia = 0.2;
 double p_capacity = 8;
-double p_gravity = 10;
+double p_gravity = 100;
 double p_evaporation = 0.05;
 double p_erosion = 0.1;
 double p_deposition = 0.5;
@@ -259,20 +259,12 @@ void simulate_particles(double *hmap, const vec2 *gmap, int width, int height) {
 			vec2 g = bil_interpolate_map_vec2(gmap, pos_old, width);
 			double h_old = bil_interpolate_map_double(hmap, pos_old, width);
 			
-			//printf("old: %g %g\n", pos_old.x, pos_old.y);
-
 			// calculate new dir vector
 			p.dir = sub(
 					scalar_mul(p_enertia, p.dir),
 					scalar_mul(1 - p_enertia, g)
 			);
-			
-			//printf("dir: %g %g\n", p.dir.x, p.dir.y);
-			
 			normalize(&p.dir);
-
-			
-			//printf("dir(n): %g %g\n", p.dir.x, p.dir.y);
 			
 			// calculate new pos
 			p.pos = add(p.pos, p.dir);
@@ -282,9 +274,6 @@ void simulate_particles(double *hmap, const vec2 *gmap, int width, int height) {
 			if(pos_new.x > (width-1) || pos_new.x < 0 || 
 					pos_new.y > (height-1) || pos_new.y < 0)
 				break;
-
-			
-			//printf("new: %g %g\n", pos_new.x, pos_new.y);
 
 			// new height
 			double h_new = bil_interpolate_map_double(hmap, pos_new, width);
