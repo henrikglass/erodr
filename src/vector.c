@@ -29,6 +29,8 @@ void normalize(vec2 *v) {
 	double x_2 = v->x * v->x;
 	double y_2 = v->y * v->y;
 	double len = sqrt(x_2 + y_2);
+	if (len == 0)
+		return;
 	v->x = v->x / len;
 	v->y = v->y / len;
 }

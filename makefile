@@ -3,7 +3,7 @@ TARGET 	= erodr
 
 # compiler
 CC 		= gcc
-CFLAGS 	= -O2 -std=c11 -Wall -pedantic#-g -pg 
+CFLAGS 	= -O2 -std=c11 -Wall -pedantic -g -pg 
 
 # linker
 LINKER 	= gcc

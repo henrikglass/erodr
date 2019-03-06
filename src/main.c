@@ -65,6 +65,8 @@ int load_pgm(
 		
 	//allocate heightmap
 	*heightmap = (double*)malloc(sizeof(double) * (*height) * (*width));
+	if(*heightmap == NULL)
+		return 1;
 
 	// read heightmap values
 	int i = 0;
@@ -175,9 +177,9 @@ double bil_interpolate_map_double(const double *map, vec2 pos, int width) {
 	return (1 - u) * ipl_l + u * ipl_r;	
 }
 
-int n = 75000;
+int n = 70000;
 int ttl = 30;
-int p_radius = 2;
+int p_radius = 4;
 double p_enertia = 0.2;
 double p_capacity = 8;
 double p_gravity = 10;
@@ -237,65 +239,79 @@ void erode(double *hmap, vec2 pos, double amount, int width, int height) {
 }
 
 void simulate_particles(double *hmap, const vec2 *gmap, int width, int height) {
-	// spawn randomized particles.
-	particle p[n];
 	srand(time(NULL));
-	double denom = (RAND_MAX/(width-1));
-	for(int i = 0; i < n; i++) {
-		p[i].pos = (vec2){(double)rand() / denom, (double)rand() / denom};	
-		p[i].dir = (vec2){0, 0};
-		p[i].vel = 0;
-		p[i].sediment = 0;
-		p[i].water = 8; 
-	}
 	
 	// simulate each particle
 	for(int i = 0; i < n; i++) {
+
+		// spawn particle.
+		particle p;
+		double denom = (RAND_MAX / (width - 1));
+		p.pos = (vec2){(double)rand() / denom, (double)rand() / denom};	
+		p.dir = (vec2){0, 0};
+		p.vel = 0;
+		p.sediment = 0;
+		p.water = 8;
+
 		for(int j = 0; j < ttl; j++) {
 			// interpolate gradient g and height h_old at p's position. 
-			vec2 pos_old = p[i].pos;
+			vec2 pos_old = p.pos;
 			vec2 g = bil_interpolate_map_vec2(gmap, pos_old, width);
 			double h_old = bil_interpolate_map_double(hmap, pos_old, width);
+			
+			//printf("old: %g %g\n", pos_old.x, pos_old.y);
 
 			// calculate new dir vector
-			p[i].dir = sub(
-					scalar_mul(p_enertia, p[i].dir),
+			p.dir = sub(
+					scalar_mul(p_enertia, p.dir),
 					scalar_mul(1 - p_enertia, g)
 			);
-			normalize(&p[i].dir);
+			
+			//printf("dir: %g %g\n", p.dir.x, p.dir.y);
+			
+			normalize(&p.dir);
 
+			
+			//printf("dir(n): %g %g\n", p.dir.x, p.dir.y);
+			
 			// calculate new pos
-			p[i].pos = add(p[i].pos, p[i].dir);
+			p.pos = add(p.pos, p.dir);
 			
 			// check bounds
-			vec2 pos_new = p[i].pos;
+			vec2 pos_new = p.pos;
 			if(pos_new.x > (width-1) || pos_new.x < 0 || 
 					pos_new.y > (height-1) || pos_new.y < 0)
 				break;
+
+			
+			//printf("new: %g %g\n", pos_new.x, pos_new.y);
 
 			// new height
 			double h_new = bil_interpolate_map_double(hmap, pos_new, width);
 			double h_diff = h_new - h_old;
 
 			// sediment capacity
-			double c = max(-h_diff, p_min_slope) * p[i].vel * p[i].water * p_capacity;
+			double c = max(-h_diff, p_min_slope) * p.vel * p.water * p_capacity;
 			
 			// decide whether to erode or deposit depending on particle properties
-			if(h_diff > 0 || p[i].sediment > c) {
+			if(h_diff > 0 || p.sediment > c) {
 				double to_deposit = (h_diff > 0) ? 
-						min(p[i].sediment, h_diff) :
-						(p[i].sediment - c) * p_deposition;
-				p[i].sediment -= to_deposit;
+						min(p.sediment, h_diff) :
+						(p.sediment - c) * p_deposition;
+				p.sediment -= to_deposit;
 				deposit(hmap, pos_old, to_deposit, width);	
 			} else {
-				double to_erode = min((c - p[i].sediment) * p_erosion, -h_diff);
+				double to_erode = min((c - p.sediment) * p_erosion, -h_diff);
 				erode(hmap, pos_old, to_erode, width, height);
 			}
+
+			// crudely just draw paths
+			//hmap[(int)pos_new.y*width + (int)pos_new.x] = 0;	
 			
 			// update `vel` and `water`
 			h_diff = sqrt(h_diff*h_diff); // uh?
-			p[i].vel = sqrt(p[i].vel*p[i].vel + h_diff*p_gravity);
-			p[i].water *= (1 - p_evaporation);
+			p.vel = sqrt(p.vel*p.vel + h_diff*p_gravity);
+			p.water *= (1 - p_evaporation);
 		}	
 	}
 }
