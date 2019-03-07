@@ -1,3 +1,4 @@
+*.sh
 plotpoints.gpl
 exampleInput/
 toplot.txt

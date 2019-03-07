@@ -9,6 +9,15 @@
 #include <string.h>
 #include "vector.h"
 
+double max(double a, double b){
+	return (a > b) ? a : b;
+}
+
+
+double min(double a, double b){
+	return (a < b) ? a : b;
+}
+
 /*
  * Particle type.
  */
@@ -71,7 +80,7 @@ int load_pgm(
 	// read heightmap values
 	int i = 0;
 	for(; getline(&line, &len, fp) != EOF; i++) {
-		(*heightmap)[i] = atof(line); // / p;
+		(*heightmap)[i] = atof(line) / 10000;
 	}
 	
 	fclose(fp);
@@ -100,20 +109,12 @@ int save_pgm(
 	fprintf(fp, "%d\n", precision);	
 	
 	for(int i = 0; i < width * height; i++) {
-		fprintf(fp, "%d\n", (int)round(heightmap[i]));	
+		//fprintf(fp, "%d\n", (int)max(round(heightmap[i]*10000), 0));	
+		fprintf(fp, "%d\n", (int)round(heightmap[i]*10000));	
 	}	
 	fclose(fp);
 	
 	return 0;
-}
-
-double max(double a, double b){
-	return (a > b) ? a : b;
-}
-
-
-double min(double a, double b){
-	return (a < b) ? a : b;
 }
 
 /*
@@ -177,38 +178,55 @@ double bil_interpolate_map_double(const double *map, vec2 pos, int width) {
 	return (1 - u) * ipl_l + u * ipl_r;	
 }
 
-int n = 70000;
+int n = 75000;
 int ttl = 100;
-int p_radius = 4;
-double p_enertia = 0.2;
+int p_radius = 1;
+double p_enertia = 0.05;
 double p_capacity = 8;
-double p_gravity = 100;
-double p_evaporation = 0.05;
-double p_erosion = 0.1;
-double p_deposition = 0.5;
-double p_min_slope = 0.1;
+double p_gravity = 10;
+double p_evaporation = 0.01;
+double p_erosion = 0.3;
+double p_deposition = 0.3;
+double p_min_slope = 0;// 0.02; //0.00001;
+
+inline void update_gradient_at(
+		const double *hmap,
+	   	vec2 *gmap,
+	   	int idx,
+	   	int width
+) {
+	int right = idx + 1;
+	int below = idx + width;
+	gmap[idx].x = hmap[right] - hmap[idx];
+	gmap[idx].y = hmap[below] - hmap[idx];
+
+}
 
 /*
  * Deposits sediment at position `pos` in heighmap `hmap`.
  * Deposition only affect immediate neighbouring gridpoints
  * to `pos`.
  */
-void deposit(double *hmap, vec2 pos, double amount, int width) {
+void deposit(double *hmap, vec2 *gmap, vec2 pos, double amount, int width) {
 	int x_i = (int)pos.x;
 	int y_i = (int)pos.y;
 	double u = pos.x - x_i;
 	double v = pos.y - y_i;
-	hmap[y_i*width + x_i]			= amount * (1 - u) * (1 - v);
-	hmap[y_i*width + x_i + 1]		= amount * u * (1 - v);
-	hmap[(y_i + 1)*width + x_i]		= amount * (1 - u) * v;
-	hmap[(y_i + 1)*width + x_i + 1] = amount * u * v;
+	hmap[y_i*width + x_i]			+= amount * (1 - u) * (1 - v);
+	hmap[y_i*width + x_i + 1]		+= amount * u * (1 - v);
+	hmap[(y_i + 1)*width + x_i]		+= amount * (1 - u) * v;
+	hmap[(y_i + 1)*width + x_i + 1] += amount * u * v;
+	update_gradient_at(hmap, gmap, y_i*width + x_i, width);
+	update_gradient_at(hmap, gmap, y_i*width + x_i + 1, width);
+	update_gradient_at(hmap, gmap, (y_i + 1)*width + x_i, width);
+	update_gradient_at(hmap, gmap, (y_i + 1)*width + x_i + 1, width);
 }
 
 /*
  * Erodes heighmap `hmap` at position `pos` by amount `amount`.
  * Erosion is distributed over an area defined through p_radius.
  */
-void erode(double *hmap, vec2 pos, double amount, int width, int height) {
+void erode(double *hmap, vec2 *gmap, vec2 pos, double amount, int width, int height) {
 	int x0 = (int)pos.x - p_radius;
 	int y0 = (int)pos.y - p_radius;
 	
@@ -225,7 +243,7 @@ void erode(double *hmap, vec2 pos, double amount, int width, int height) {
 			kernel_sum += w;
 		}	
 	}
-	
+
 	// normalize weights and apply changes on heighmap.
 	for(int y = y0; y < y0 + 2*p_radius + 1; y++) {
 		for(int x = x0; x < x0 + 2*p_radius + 1; x++) {
@@ -236,29 +254,43 @@ void erode(double *hmap, vec2 pos, double amount, int width, int height) {
 			hmap[y*width + x] -= amount * kernel[y-y0][x-x0];
 		}	
 	}
+	
+	//Apply changes to gradientmap
+	for(int y = y0; y < y0 + 2*p_radius + 1; y++) {
+		for(int x = x0; x < x0 + 2*p_radius + 1; x++) {
+			int idx = y*width + x;
+			if(idx >= width * height || idx < 0)
+				continue;
+			update_gradient_at(hmap, gmap, idx, width);	
+		}	
+	}
 }
 
-void simulate_particles(double *hmap, const vec2 *gmap, int width, int height) {
+void simulate_particles(double *hmap, vec2 *gmap, int width, int height) {
 	srand(time(NULL));
 	
 	// simulate each particle
 	for(int i = 0; i < n; i++) {
+		if(!((i+1) % 10000))
+			printf("Particles simulated: %d\n", i+1);
 
 		// spawn particle.
 		particle p;
 		double denom = (RAND_MAX / (width - 1));
 		p.pos = (vec2){(double)rand() / denom, (double)rand() / denom};	
 		p.dir = (vec2){0, 0};
-		p.vel = 0;
+		p.vel = 1;
 		p.sediment = 0;
-		p.water = 8;
+		p.water = 1;
 
 		for(int j = 0; j < ttl; j++) {
 			// interpolate gradient g and height h_old at p's position. 
 			vec2 pos_old = p.pos;
 			vec2 g = bil_interpolate_map_vec2(gmap, pos_old, width);
 			double h_old = bil_interpolate_map_double(hmap, pos_old, width);
-			
+		
+			//printf("(%g, %g) has:\t", pos_old.x, pos_old.y);	
+
 			// calculate new dir vector
 			p.dir = sub(
 					scalar_mul(p_enertia, p.dir),
@@ -278,10 +310,38 @@ void simulate_particles(double *hmap, const vec2 *gmap, int width, int height) {
 			// new height
 			double h_new = bil_interpolate_map_double(hmap, pos_new, width);
 			double h_diff = h_new - h_old;
+		
+			
+			//printf("p.sed=%g\t", p.sediment);	
+
+			if(h_diff > 0) {
+				double to_deposit = min(p.sediment, h_diff);
+
+				//printf("deposit=%g\t", to_deposit);	
+				p.sediment -= to_deposit;
+				deposit(hmap, gmap, pos_old, to_deposit, width);
+			} else {	
+				double c = max(-h_diff, p_min_slope) * p.vel * p.water * p_capacity;
+				if (p.sediment > c) {
+					double to_deposit = (p.sediment - c) * p_deposition;
+					//printf("deposit=%g\t", to_deposit);	
+					p.sediment -= to_deposit;
+					deposit(hmap, gmap, pos_old, to_deposit, width);
+				} else {
+					double to_erode = min((c - p.sediment) * p_erosion, -h_diff); 
+					//printf("erode=%g\t", to_erode);	
+					p.sediment += to_erode;
+					erode(hmap, gmap, pos_old, to_erode, width, height);
+				} 
+				
+				//printf("capacity=%g\t", c);	
+			}
+
+
 
 			// sediment capacity
-			double c = max(-h_diff, p_min_slope) * p.vel * p.water * p_capacity;
-			
+			/*double c = max(-h_diff, p_min_slope) * p.vel * p.water * p_capacity;
+
 			// decide whether to erode or deposit depending on particle properties
 			if(h_diff > 0 || p.sediment > c) {
 				double to_deposit = (h_diff > 0) ? 
@@ -291,16 +351,19 @@ void simulate_particles(double *hmap, const vec2 *gmap, int width, int height) {
 				deposit(hmap, pos_old, to_deposit, width);	
 			} else {
 				double to_erode = min((c - p.sediment) * p_erosion, -h_diff);
+				p.sediment += to_erode;
 				erode(hmap, pos_old, to_erode, width, height);
-			}
+			}*/
 
 			// crudely just draw paths
 			//hmap[(int)pos_new.y*width + (int)pos_new.x] = 0;	
 			
 			// update `vel` and `water`
 			h_diff = sqrt(h_diff*h_diff); // uh?
+			//printf("vel=%g\twater=%g\t\n", p.vel, p.water);
 			p.vel = sqrt(p.vel*p.vel + h_diff*p_gravity);
 			p.water *= (1 - p_evaporation);
+
 		}	
 	}
 }
