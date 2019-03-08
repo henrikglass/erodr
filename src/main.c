@@ -178,17 +178,20 @@ double bil_interpolate_map_double(const double *map, vec2 pos, int width) {
 	return (1 - u) * ipl_l + u * ipl_r;	
 }
 
-int n = 10000000; //75000;
-int ttl = 100;
-int p_radius = 2;
+int n = 400000; //75000;
+int ttl = 30;
+int p_radius = 1;
 double p_enertia = 0.1;
-double p_capacity = 8;
-double p_gravity = 10;
-double p_evaporation = 0.01;
+double p_capacity = 10;
+double p_gravity = 4;
+double p_evaporation = 0.1;
 double p_erosion = 0.1;
-double p_deposition = 0.1;
-double p_min_slope = 0.01;//0.02;// 0.02; //0.00001;
+double p_deposition = 1;
+double p_min_slope = 0.0001;//0.02;// 0.02; //0.00001;
 
+/*
+ * Updates gradientmap at index idx.
+ */
 inline void update_gradient_at(
 		const double *hmap,
 	   	vec2 *gmap,
@@ -199,7 +202,6 @@ inline void update_gradient_at(
 	int below = idx + width;
 	gmap[idx].x = hmap[right] - hmap[idx];
 	gmap[idx].y = hmap[below] - hmap[idx];
-
 }
 
 /*
@@ -253,18 +255,6 @@ void erode(double *hmap, vec2 *gmap, vec2 pos, double amount, int width, int hei
 			//kernel_sum += w;
 		}	
 	}
-
-	/*if(x0 < 0 || y0 < 0 || x0 >= width || y0 >= height) {
-		for(int y = 0; y < 2*p_radius + 1; y++) {
-			for(int x = 0; x < 2*p_radius + 1; x++) {
-				printf("%lf\t", (kernel[y][x]));	
-			}
-			printf("\n");	
-		}
-		printf("sum: %g\n", kernel_sum);
-		printf("at: %d %d\n", x0, y0);
-		exit(1);	
-	}*/
 
 	// normalize weights and apply changes on heighmap.
 	for(int y = y0; y < y0 + 2*p_radius + 1; y++) {
@@ -332,36 +322,8 @@ void simulate_particles(double *hmap, vec2 *gmap, int width, int height) {
 			double h_new = bil_interpolate_map_double(hmap, pos_new, width);
 			double h_diff = h_new - h_old;
 		
-			
-			//printf("p.sed=%g\t", p.sediment);	
-
-			if(h_diff > 0) {
-				double to_deposit = min(p.sediment, h_diff);
-
-				//printf("deposit=%g\t", to_deposit);	
-				p.sediment -= to_deposit;
-				deposit(hmap, gmap, pos_old, to_deposit, width);
-			} else {	
-				double c = max(-h_diff, p_min_slope) * p.vel * p.water * p_capacity;
-				if (p.sediment > c) {
-					double to_deposit = (p.sediment - c) * p_deposition;
-					//printf("deposit=%g\t", to_deposit);	
-					p.sediment -= to_deposit;
-					deposit(hmap, gmap, pos_old, to_deposit, width);
-				} else {
-					double to_erode = min((c - p.sediment) * p_erosion, -h_diff); 
-					//printf("erode=%g\t", to_erode);	
-					p.sediment += to_erode;
-					erode(hmap, gmap, pos_old, to_erode, width, height);
-				} 
-				
-				//printf("capacity=%g\t", c);	
-			}
-
-
-
 			// sediment capacity
-			/*double c = max(-h_diff, p_min_slope) * p.vel * p.water * p_capacity;
+			double c = max(-h_diff, p_min_slope) * p.vel * p.water * p_capacity;
 
 			// decide whether to erode or deposit depending on particle properties
 			if(h_diff > 0 || p.sediment > c) {
@@ -369,22 +331,19 @@ void simulate_particles(double *hmap, vec2 *gmap, int width, int height) {
 						min(p.sediment, h_diff) :
 						(p.sediment - c) * p_deposition;
 				p.sediment -= to_deposit;
-				deposit(hmap, pos_old, to_deposit, width);	
+				deposit(hmap, gmap, pos_old, to_deposit, width);	
 			} else {
 				double to_erode = min((c - p.sediment) * p_erosion, -h_diff);
 				p.sediment += to_erode;
-				erode(hmap, pos_old, to_erode, width, height);
-			}*/
+				erode(hmap, gmap, pos_old, to_erode, width, height);
+			}
 
 			// crudely just draw paths
 			//hmap[(int)pos_new.y*width + (int)pos_new.x] = 0;	
 			
 			// update `vel` and `water`
-			//h_diff = sqrt(h_diff*h_diff); // uh?
-			//printf("vel=%g\twater=%g\t\n", p.vel, p.water);
 			p.vel = sqrt(p.vel*p.vel + h_diff*p_gravity);
 			p.water *= (1 - p_evaporation);
-
 		}	
 	}
 }
@@ -410,12 +369,9 @@ int main(int argc, char *argv[]) {
 
 	// simulate hydraulic erosion
 	simulate_particles(heightmap, gradientmap, width, height);
-	
+
+	// Save results	
 	save_pgm("output.pgm", heightmap, width, height, precision);
-	// debug - TODO remove
-	//printf("%f\n", heightmap[1000000]);
-	//sparse_heightmap_print(heightmap, width, height);
-	//sparse_gradientmap_print(gradientmap, width, height);
 
 	// free memory
 	free(heightmap);
