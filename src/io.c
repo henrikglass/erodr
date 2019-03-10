@@ -1,12 +1,6 @@
 #undef _GNU_SOURCE // gets rid of vim warning
 #define _GNU_SOURCE
 
-#define READ_LITTLE_ENDIAN_16( array, index )\
-    (((size_t)(array)[(index)]) | ((size_t)(array)[(index)+1])<<8)
-
-#define READ_BIG_ENDIAN_16( array, index )\
-    (((size_t)(array)[(index)+1]) | ((size_t)(array)[(index)])<<8)
-
 #include "io.h"
 #include <math.h>
 #include <stdio.h> 
