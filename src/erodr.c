@@ -1,3 +1,5 @@
+#define DEFAULT_PARAM {70000, 30, 2, 0.1, 10, 4, 0.1, 0.1, 1, 0.0001}
+
 #include <time.h>
 #include <math.h>
 #include <stdlib.h>
@@ -12,6 +14,22 @@ double max(double a, double b){
 double min(double a, double b){
 	return (a < b) ? a : b;
 }
+
+/*
+ * Simulation parameters.
+ */
+typedef struct sim_params {
+	int n;
+	int ttl;
+	int p_radius;
+	double p_enertia;
+	double p_capacity;
+	double p_gravity;
+	double p_evaporation;
+	double p_erosion;
+	double p_deposition;
+	double p_min_slope;
+} sim_params;
 
 /*
  * Particle type.
@@ -85,17 +103,6 @@ double bil_interpolate_map_double(const double *map, vec2 pos, int width) {
 	return (1 - u) * ipl_l + u * ipl_r;	
 }
 
-int n = 70000;
-int ttl = 30;
-int p_radius = 2;
-double p_enertia = 0.1;
-double p_capacity = 10;
-double p_gravity = 4;
-double p_evaporation = 0.1;
-double p_erosion = 0.1;
-double p_deposition = 1;
-double p_min_slope = 0.0001;//0.02;// 0.02; //0.00001;
-
 /*
  * Updates gradientmap at index idx.
  */
@@ -135,25 +142,33 @@ void deposit(double *hmap, vec2 *gmap, vec2 pos, double amount, int width) {
  * Erodes heighmap `hmap` at position `pos` by amount `amount`.
  * Erosion is distributed over an area defined through p_radius.
  */
-void erode(double *hmap, vec2 *gmap, vec2 pos, double amount, int width, int height) {
+void erode(
+		double *hmap,
+	   	vec2 *gmap,
+	   	vec2 pos,
+		double amount,
+	   	int width,
+	   	int height,
+	   	sim_params *params
+) {
 	
-	if(p_radius < 1){
+	if(params->p_radius < 1){
 		deposit(hmap, gmap, pos, -amount, width);
 		return;
 	}
 	
-	int x0 = (int)pos.x - p_radius;
-	int y0 = (int)pos.y - p_radius;
+	int x0 = (int)pos.x - params->p_radius;
+	int y0 = (int)pos.y - params->p_radius;
 	
 	// construct erosion/deposition kernel.
-	double kernel[2*p_radius + 1][2*p_radius + 1];
+	double kernel[2*params->p_radius + 1][2*params->p_radius + 1];
 	double kernel_sum = 0;
-	for(int y = y0; y < y0 + 2*p_radius + 1; y++) {
-		for(int x = x0; x < x0 + 2*p_radius + 1; x++) {
+	for(int y = y0; y < y0 + 2*params->p_radius + 1; y++) {
+		for(int x = x0; x < x0 + 2*params->p_radius + 1; x++) {
 			double d_x = x - pos.x;
 			double d_y = y - pos.y;
 			double distance = sqrt(d_x*d_x + d_y*d_y);
-			double w = max(0, p_radius - distance);
+			double w = max(0, params->p_radius - distance);
 			kernel_sum += w;
 			if(x < 0 || y < 0 || x >= width || y >= height){
 				continue;
@@ -164,8 +179,8 @@ void erode(double *hmap, vec2 *gmap, vec2 pos, double amount, int width, int hei
 	}
 
 	// normalize weights and apply changes on heighmap.
-	for(int y = y0; y < y0 + 2*p_radius + 1; y++) {
-		for(int x = x0; x < x0 + 2*p_radius + 1; x++) {
+	for(int y = y0; y < y0 + 2*params->p_radius + 1; y++) {
+		for(int x = x0; x < x0 + 2*params->p_radius + 1; x++) {
 			if(x < 0 || y < 0 || x >= width || y >= height)
 				continue;
 			kernel[y-y0][x-x0] /= kernel_sum;
@@ -174,8 +189,8 @@ void erode(double *hmap, vec2 *gmap, vec2 pos, double amount, int width, int hei
 	}
 	
 	//Apply changes to gradientmap
-	for(int y = y0; y < y0 + 2*p_radius + 1; y++) {
-		for(int x = x0; x < x0 + 2*p_radius + 1; x++) {
+	for(int y = y0; y < y0 + 2*params->p_radius + 1; y++) {
+		for(int x = x0; x < x0 + 2*params->p_radius + 1; x++) {
 			if(x < 0 || y < 0 || x >= width || y >= height)
 				continue;
 			int idx = y*width + x;
@@ -184,11 +199,17 @@ void erode(double *hmap, vec2 *gmap, vec2 pos, double amount, int width, int hei
 	}
 }
 
-void simulate_particles(double *hmap, vec2 *gmap, int width, int height) {
+void simulate_particles(
+		double *hmap,
+	   	vec2 *gmap,
+	   	int width,
+	   	int height,
+	   	sim_params *params
+) {
 	srand(time(NULL));
 	
 	// simulate each particle
-	for(int i = 0; i < n; i++) {
+	for(int i = 0; i < params->n; i++) {
 		if(!((i+1) % 10000))
 			printf("Particles simulated: %d\n", i+1);
 
@@ -201,7 +222,7 @@ void simulate_particles(double *hmap, vec2 *gmap, int width, int height) {
 		p.sediment = 0;
 		p.water = 1;
 
-		for(int j = 0; j < ttl; j++) {
+		for(int j = 0; j < params->ttl; j++) {
 			// interpolate gradient g and height h_old at p's position. 
 			vec2 pos_old = p.pos;
 			vec2 g = bil_interpolate_map_vec2(gmap, pos_old, width);
@@ -211,8 +232,8 @@ void simulate_particles(double *hmap, vec2 *gmap, int width, int height) {
 
 			// calculate new dir vector
 			p.dir = sub(
-					scalar_mul(p_enertia, p.dir),
-					scalar_mul(1 - p_enertia, g)
+					scalar_mul(params->p_enertia, p.dir),
+					scalar_mul(1 - params->p_enertia, g)
 			);
 			normalize(&p.dir);
 			
@@ -230,27 +251,24 @@ void simulate_particles(double *hmap, vec2 *gmap, int width, int height) {
 			double h_diff = h_new - h_old;
 		
 			// sediment capacity
-			double c = max(-h_diff, p_min_slope) * p.vel * p.water * p_capacity;
+			double c = max(-h_diff, params->p_min_slope) * p.vel * p.water * params->p_capacity;
 
 			// decide whether to erode or deposit depending on particle properties
 			if(h_diff > 0 || p.sediment > c) {
 				double to_deposit = (h_diff > 0) ? 
 						min(p.sediment, h_diff) :
-						(p.sediment - c) * p_deposition;
+						(p.sediment - c) * params->p_deposition;
 				p.sediment -= to_deposit;
 				deposit(hmap, gmap, pos_old, to_deposit, width);	
 			} else {
-				double to_erode = min((c - p.sediment) * p_erosion, -h_diff);
+				double to_erode = min((c - p.sediment) * params->p_erosion, -h_diff);
 				p.sediment += to_erode;
-				erode(hmap, gmap, pos_old, to_erode, width, height);
+				erode(hmap, gmap, pos_old, to_erode, width, height, params);
 			}
 
-			// crudely just draw paths
-			//hmap[(int)pos_new.y*width + (int)pos_new.x] = 0;	
-			
 			// update `vel` and `water`
-			p.vel = sqrt(p.vel*p.vel + h_diff*p_gravity);
-			p.water *= (1 - p_evaporation);
+			p.vel = sqrt(p.vel*p.vel + h_diff*params->p_gravity);
+			p.water *= (1 - params->p_evaporation);
 		}	
 	}
 }
@@ -259,6 +277,8 @@ void simulate_particles(double *hmap, vec2 *gmap, int width, int height) {
  * Main.
  */
 int main(int argc, char *argv[]) {
+	sim_params params = DEFAULT_PARAM;	
+	
 	// parse args.
 	char filepath[FILEPATH_MAXLEN];
 	if(parse_args(argc, argv, filepath))
@@ -271,11 +291,11 @@ int main(int argc, char *argv[]) {
 		return 1;
 
 	// construct gradientmap.
-	vec2 *gradientmap = (vec2 *) malloc(sizeof(vec2) * width * height);
+	vec2 *gradientmap = (vec2 *)malloc(sizeof(vec2) * width * height);
 	construct_gradientmap(heightmap, gradientmap, width, height);
-
+	
 	// simulate hydraulic erosion
-	simulate_particles(heightmap, gradientmap, width, height);
+	simulate_particles(heightmap, gradientmap, width, height, &params);
 
 	// Save results	
 	save_pgm("output.pgm", heightmap, width, height, precision, false);
