@@ -44,45 +44,12 @@ typedef struct particle {
 } particle;
 
 /*
- * Constructs the gradientmap.
+ * gradient & height tuple.
  */
-void construct_gradientmap(const double *hmap, vec2 gradientmap[], int w, int h) {
-	//skip last line.
-	for(int i = 0; i < w * (h - 1); i++) {
-		//skip last column.
-		if(i % w == w - 1) {
-			gradientmap[i] = (vec2){0,0};
-			continue;
-		}
-		
-		// calculate slope at i. TODO improve w. sobel.
-		int right = i + 1;
-		int below = i + w;
-		gradientmap[i].x = hmap[right] - hmap[i];
-		gradientmap[i].y = hmap[below] - hmap[i];
-	}
-	for(int i = w*(h-1); i < w*h; i++) {
-		gradientmap[i] = (vec2){0,0};
-	}
-}
-
-/*
- * Bilinearly interpolate vec2 value at (x, y) in map.
- */
-vec2 bil_interpolate_map_vec2(const vec2 *map, vec2 pos, int width) {
-	vec2 ul, ur, ll, lr, ipl_l, ipl_r;
-	int x_i = (int)pos.x;
-	int y_i = (int)pos.y;
-	double u = pos.x - x_i;
-	double v = pos.y - y_i;
-	ul = map[y_i*width + x_i];
-	ur = map[y_i*width + x_i + 1];
-	ll = map[(y_i + 1)*width + x_i];
-	lr = map[(y_i + 1)*width + x_i + 1];
-	ipl_l = add(scalar_mul(1 - v, ul), scalar_mul(v, ll));
-	ipl_r = add(scalar_mul(1 - v, ur), scalar_mul(v, lr));
-	return add(scalar_mul(1 - u, ipl_l), scalar_mul(u, ipl_r));
-}
+typedef struct height_gradient_tuple {
+	vec2 gradient;
+	double height;
+} height_gradient_tuple;
 
 /*
  * Bilinearly interpolate double value at (x, y) in map.
@@ -104,26 +71,11 @@ double bil_interpolate_map_double(const image *map, vec2 pos) {
 }
 
 /*
- * Updates gradientmap at index idx.
- */
-inline void update_gradient_at(
-		const double *hmap,
-	   	vec2 *gmap,
-	   	int idx,
-	   	int width
-) {
-	int right = idx + 1;
-	int below = idx + width;
-	gmap[idx].x = hmap[right] - hmap[idx];
-	gmap[idx].y = hmap[below] - hmap[idx];
-}
-
-/*
  * Deposits sediment at position `pos` in heighmap `hmap`.
  * Deposition only affect immediate neighbouring gridpoints
  * to `pos`.
  */
-void deposit(image *hmap, vec2 *gmap, vec2 pos, double amount) {
+void deposit(image *hmap, vec2 pos, double amount) {
 	double *hmap_buffer = (double *) hmap->buffer;
 	int x_i = (int)pos.x;
 	int y_i = (int)pos.y;
@@ -133,10 +85,6 @@ void deposit(image *hmap, vec2 *gmap, vec2 pos, double amount) {
 	hmap_buffer[y_i*hmap->width + x_i + 1] += amount * u * (1 - v);
 	hmap_buffer[(y_i + 1)*hmap->width + x_i] += amount * (1 - u) * v;
 	hmap_buffer[(y_i + 1)*hmap->width + x_i + 1] += amount * u * v;
-	update_gradient_at(hmap_buffer, gmap, y_i*hmap->width + x_i, hmap->width);
-	update_gradient_at(hmap_buffer, gmap, y_i*hmap->width + x_i + 1, hmap->width);
-	update_gradient_at(hmap_buffer, gmap, (y_i + 1)*hmap->width + x_i, hmap->width);
-	update_gradient_at(hmap_buffer, gmap, (y_i + 1)*hmap->width + x_i + 1, hmap->width);
 }
 
 /*
@@ -145,7 +93,6 @@ void deposit(image *hmap, vec2 *gmap, vec2 pos, double amount) {
  */
 void erode(
 		image *hmap,
-	   	vec2 *gmap,
 	   	vec2 pos,
 		double amount,
 	   	int radius
@@ -153,7 +100,7 @@ void erode(
 	double *hmap_buffer = (double *) hmap->buffer;
 
 	if(radius < 1){
-		deposit(hmap, gmap, pos, -amount);
+		deposit(hmap, pos, -amount);
 		return;
 	}
 	
@@ -174,7 +121,6 @@ void erode(
 				continue;
 			}
 			kernel[y-y0][x-x0] = w;
-			//kernel_sum += w;
 		}	
 	}
 
@@ -187,27 +133,52 @@ void erode(
 			hmap_buffer[y*hmap->width + x] -= amount * kernel[y-y0][x-x0];
 		}	
 	}
-	
-	//Apply changes to gradientmap
-	for(int y = y0; y < y0 + 2*radius + 1; y++) {
-		for(int x = x0; x < x0 + 2*radius + 1; x++) {
-			if(x < 0 || y < 0 || x >= hmap->width || y >= hmap->height)
-				continue;
-			int idx = y*hmap->width + x;
-			update_gradient_at(hmap_buffer, gmap, idx, hmap->width);	
-		}	
-	}
+}
+
+/*
+ * Returns gradient at (int x, int y) on heightmap `hmap`.
+ */
+vec2 gradient_at(image *hmap, int x, int y) {
+	double *hmap_buffer = (double *) hmap->buffer;
+	int idx = y * hmap->width + x;
+	int right = idx + 1;
+	int below = idx + hmap->width;
+	vec2 g;
+	g.x = hmap_buffer[right] - hmap_buffer[idx]; 
+	g.y = hmap_buffer[below] - hmap_buffer[idx];
+	return g;	
+}
+
+/*
+ * Returns interpolated gradient and height at (double x, double y) on
+ * heightmap `hmap`.
+ */
+height_gradient_tuple height_gradient_at(image *hmap, vec2 pos) {
+	height_gradient_tuple ret;
+	vec2 ul, ur, ll, lr, ipl_l, ipl_r;
+	int x_i = (int)pos.x;
+	int y_i = (int)pos.y;
+	double u = pos.x - x_i;
+	double v = pos.y - y_i;
+	ul = gradient_at(hmap, x_i, y_i);
+	ur = gradient_at(hmap, x_i + 1, y_i);
+	ll = gradient_at(hmap, x_i, y_i + 1);
+	lr = gradient_at(hmap, x_i + 1, y_i + 1);
+	ipl_l = add(scalar_mul(1 - v, ul), scalar_mul(v, ll));
+	ipl_r = add(scalar_mul(1 - v, ur), scalar_mul(v, lr));
+	ret.gradient = add(scalar_mul(1 - u, ipl_l), scalar_mul(u, ipl_r));
+	ret.height = bil_interpolate_map_double(hmap, pos);
+	return ret;
 }
 
 void simulate_particles(
 		image *hmap,
-	   	vec2 *gmap,
 	   	sim_params *params
 ) {
 	srand(time(NULL));
 	
 	// simulate each particle
-	for(int i = 0; i < 10; i++) {
+	for(int i = 0; i < params->n; i++) {
 		if(!((i+1) % 10000))
 			printf("Particles simulated: %d\n", i+1);
 
@@ -223,8 +194,9 @@ void simulate_particles(
 		for(int j = 0; j < params->ttl; j++) {
 			// interpolate gradient g and height h_old at p's position. 
 			vec2 pos_old = p.pos;
-			vec2 g = bil_interpolate_map_vec2(gmap, pos_old, hmap->width);
-			double h_old = bil_interpolate_map_double(hmap, pos_old);
+			height_gradient_tuple hg = height_gradient_at(hmap, pos_old);
+			vec2 g = hg.gradient;
+			double h_old = hg.height; 
 
 			// calculate new dir vector
 			p.dir = sub(
@@ -255,11 +227,11 @@ void simulate_particles(
 						min(p.sediment, h_diff) :
 						(p.sediment - c) * params->p_deposition;
 				p.sediment -= to_deposit;
-				deposit(hmap, gmap, pos_old, to_deposit);	
+				deposit(hmap, pos_old, to_deposit);	
 			} else {
 				double to_erode = min((c - p.sediment) * params->p_erosion, -h_diff);
 				p.sediment += to_erode;
-				erode(hmap, gmap, pos_old, to_erode, params->p_radius);
+				erode(hmap, pos_old, to_erode, params->p_radius);
 			}
 
 			// update `vel` and `water`
@@ -286,19 +258,12 @@ int main(int argc, char *argv[]) {
 	if(load_pgm(filepath, &img, &precision))
 		return 1;
 
-	// construct gradientmap.
-	vec2 *gradientmap = (vec2 *)malloc(sizeof(vec2) * img.width * img.height);
-	double *hmap = (double *)img.buffer;
-	construct_gradientmap(hmap, gradientmap, img.width, img.height);
-	
 	// simulate hydraulic erosion
-	simulate_particles(&img, gradientmap, &params);
+	simulate_particles(&img, &params);
 
 	// Save results	
 	save_pgm("output.pgm", &img, precision, true);
 
 	// free memory
 	release_image(&img);	
-	//free(heightmap);
-	free(gradientmap);
 }
