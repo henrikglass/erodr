@@ -46,10 +46,10 @@ typedef struct particle {
 /*
  * gradient & height tuple.
  */
-typedef struct height_gradient_tuple {
+typedef struct hg_tuple {
 	vec2 gradient;
 	double height;
-} height_gradient_tuple;
+} hg_tuple;
 
 /*
  * Bilinearly interpolate double value at (x, y) in map.
@@ -153,8 +153,8 @@ vec2 gradient_at(image *hmap, int x, int y) {
  * Returns interpolated gradient and height at (double x, double y) on
  * heightmap `hmap`.
  */
-height_gradient_tuple height_gradient_at(image *hmap, vec2 pos) {
-	height_gradient_tuple ret;
+hg_tuple height_gradient_at(image *hmap, vec2 pos) {
+	hg_tuple ret;
 	vec2 ul, ur, ll, lr, ipl_l, ipl_r;
 	int x_i = (int)pos.x;
 	int y_i = (int)pos.y;
@@ -171,6 +171,9 @@ height_gradient_tuple height_gradient_at(image *hmap, vec2 pos) {
 	return ret;
 }
 
+/*
+ * Runs hydraulic erosion simulation.
+ */
 void simulate_particles(
 		image *hmap,
 	   	sim_params *params
@@ -194,7 +197,7 @@ void simulate_particles(
 		for(int j = 0; j < params->ttl; j++) {
 			// interpolate gradient g and height h_old at p's position. 
 			vec2 pos_old = p.pos;
-			height_gradient_tuple hg = height_gradient_at(hmap, pos_old);
+			hg_tuple hg = height_gradient_at(hmap, pos_old);
 			vec2 g = hg.gradient;
 			double h_old = hg.height; 
 
