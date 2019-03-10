@@ -4,6 +4,7 @@
 #define FILEPATH_MAXLEN 512
 
 #include <stdbool.h>
+#include "image.h"
 
 /*
  * Parses command line arguments.
@@ -16,9 +17,7 @@ int parse_args(int argc, char *argv[], char *filepath);
  */
 int load_pgm(
 		const char *filepath,
-	   	double **buffer,
-	   	int *width,
-	   	int *height,
+	   	image *img,
 		int *precision
 );
 
@@ -27,9 +26,7 @@ int load_pgm(
  */
 int save_pgm(
 		const char *filepath,
-	   	double *buffer,
-	   	int width,
-	   	int height,
+	   	image *img,
 		int precision,
 		bool ascii_encoding
 );
