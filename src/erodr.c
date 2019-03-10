@@ -278,7 +278,7 @@ int main(int argc, char *argv[]) {
 	simulate_particles(heightmap, gradientmap, width, height);
 
 	// Save results	
-	save_pgm("output.pgm", heightmap, width, height, precision);
+	save_pgm("output.pgm", heightmap, width, height, precision, false);
 
 	// free memory
 	free(heightmap);

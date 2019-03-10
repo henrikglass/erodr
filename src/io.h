@@ -3,6 +3,8 @@
 
 #define FILEPATH_MAXLEN 512
 
+#include <stdbool.h>
+
 /*
  * Parses command line arguments.
  */
@@ -28,7 +30,8 @@ int save_pgm(
 	   	double *buffer,
 	   	int width,
 	   	int height,
-		int precision
+		int precision,
+		bool ascii_encoding
 );
 
 #endif
