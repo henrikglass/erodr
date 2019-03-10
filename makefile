@@ -29,5 +29,4 @@ $(OBJDIR):
 	mkdir $(OBJDIR)
 
 clean:
-	rm $(BINDIR)/$(TARGET)
-	rm $(OBJDIR)/*.o
+	rm $(BINDIR)/$(TARGET) & rm $(OBJDIR)/*.o

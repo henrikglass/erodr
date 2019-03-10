@@ -1,10 +1,18 @@
 #undef _GNU_SOURCE // gets rid of vim warning
 #define _GNU_SOURCE
 
+#define READ_LITTLE_ENDIAN_16( array, index )\
+    (((size_t)(array)[(index)]) | ((size_t)(array)[(index)+1])<<8)
+
+#define READ_BIG_ENDIAN_16( array, index )\
+    (((size_t)(array)[(index)+1]) | ((size_t)(array)[(index)])<<8)
+
 #include "io.h"
 #include <math.h>
 #include <stdio.h> 
+#include <stdint.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <string.h>
 
 /*
@@ -34,34 +42,52 @@ int load_pgm(
 	FILE	*fp = fopen(filepath, "r");
 	char	*token;
 	char	*line = NULL;
+	char	*magic;
 	size_t	len = 0;
+	int		data_offset = 0;
 
 	if(fp == NULL)
 		return 1;
 	
 	// read width, height and precision
-	// TODO do properly
-	if (getline(&line, &len, fp) == EOF) return 1; // magic
+	// TODO rewrite properly
+	if (getline(&magic, &len, fp) == EOF) return 1; // magic
+	data_offset += len;
 	if (getline(&line, &len, fp) == EOF) return 1; // comment
+	data_offset += len;
 	if (getline(&line, &len, fp) == EOF) return 1; // width height
+	data_offset += len;
 	token   = strtok(line, " ");
 	*width  = atoi(token);
 	token   = strtok(NULL, " ");
 	*height = atoi(token);
 	if (getline(&line, &len, fp) == EOF) return 1; // precision
+	data_offset += len;
 	*precision = atoi(line);
-		
-	//allocate heightmap
+	
+	// Allocate buffer for pixel values
 	*buffer = (double*)malloc(sizeof(double) * (*height) * (*width));
 	if(*buffer == NULL)
 		return 1;
 
-	// read heightmap values
-	int i = 0;
-	for(; getline(&line, &len, fp) != EOF; i++) {
-		(*buffer)[i] = atof(line) / *precision;
+	// Read pixel values to buffer. 
+	// If magic is "P2" then values are ASCII encoded. 
+	// If magic is "P5" then values are binary encoded. 
+	if(strncmp(magic, "P2", 2) == 0){
+		for(int i = 0; getline(&line, &len, fp) != EOF; i++)
+			(*buffer)[i] = atof(line) / *precision;
+	} else if(strncmp(magic, "P5", 2) == 0) {
+		int byte_depth = *precision < 256 ? 1 : 2; 
+		char gv[byte_depth];
+		for(int i = 0; i < (*width)*(*height); i++) {
+			fread(gv, sizeof(char), byte_depth, fp);
+			int val = (byte_depth == 2) ? 
+				((gv[0] << 8) & 0xFF00) | (gv[1] & 0x00FF) :
+				gv[0] & 0xFF;
+			(*buffer)[i] = (double) val / *precision;
+		}
 	}
-	
+
 	fclose(fp);
 	if(line)
 		free(line);
