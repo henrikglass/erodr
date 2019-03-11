@@ -2,14 +2,14 @@
 TARGET 	= erodr
 
 # compiler
-# CC 		= gcc
+#CC 		= gcc
 CC 		= clang
-CFLAGS 	= -O2 -std=c11 -Wall -pedantic #-g -pg 
+CFLAGS 		= -march=native -O2 -std=c99 -Wall -pedantic #-pg #-g
 
 # linker
 #LINKER 	= gcc
 LINKER 	= clang
-LFLAGS 	= -lm
+LFLAGS 	= -lm #-pg
 
 # directories
 OBJDIR 	= obj

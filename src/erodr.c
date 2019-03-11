@@ -27,6 +27,15 @@ typedef struct hg_tuple {
 	double height;
 } hg_tuple;
 
+int min(int a, int b) {
+	return (a > b) ? b : a;
+}
+
+
+int max(int a, int b) {
+	return (a > b) ? a : b;
+}
+
 /*
  * Bilinearly interpolate double value at (x, y) in map.
  */
@@ -82,29 +91,28 @@ void erode(
 	
 	int x0 = (int)pos.x - radius;
 	int y0 = (int)pos.y - radius;
+	int x_start = max(0, x0);
+	int y_start = max(0, y0);
+	int x_end = min(hmap->width, x0+2*radius+1);
+	int y_end = min(hmap->height, y0+2*radius+1);
 	
 	// construct erosion/deposition kernel.
 	double kernel[2*radius + 1][2*radius + 1];
 	double kernel_sum = 0;
-	for(int y = y0; y < y0 + 2*radius + 1; y++) {
-		for(int x = x0; x < x0 + 2*radius + 1; x++) {
+	for(int y = y_start; y < y_end; y++) {
+		for(int x = x_start; x < x_end; x++) {
 			double d_x = x - pos.x;
 			double d_y = y - pos.y;
 			double distance = sqrt(d_x*d_x + d_y*d_y);
 			double w = fmax(0, radius - distance);
 			kernel_sum += w;
-			if(x < 0 || y < 0 || x >= hmap->width || y >= hmap->height){
-				continue;
-			}
 			kernel[y-y0][x-x0] = w;
 		}	
 	}
 
 	// normalize weights and apply changes on heighmap.
-	for(int y = y0; y < y0 + 2*radius + 1; y++) {
-		for(int x = x0; x < x0 + 2*radius + 1; x++) {
-			if(x < 0 || y < 0 || x >= hmap->width || y >= hmap->height)
-				continue;
+	for(int y = y_start; y < y_end; y++) {
+		for(int x = x_start; x < x_end; x++) {
 			kernel[y-y0][x-x0] /= kernel_sum;
 			hmap_buffer[y*hmap->width + x] -= amount * kernel[y-y0][x-x0];
 		}	
