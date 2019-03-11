@@ -8,14 +8,6 @@
 #include "image.h"
 #include "params.h"
 
-double max(double a, double b){
-	return (a > b) ? a : b;
-}
-
-double min(double a, double b){
-	return (a < b) ? a : b;
-}
-
 /*
  * Particle type.
  */
@@ -99,7 +91,7 @@ void erode(
 			double d_x = x - pos.x;
 			double d_y = y - pos.y;
 			double distance = sqrt(d_x*d_x + d_y*d_y);
-			double w = max(0, radius - distance);
+			double w = fmax(0, radius - distance);
 			kernel_sum += w;
 			if(x < 0 || y < 0 || x >= hmap->width || y >= hmap->height){
 				continue;
@@ -206,17 +198,17 @@ void simulate_particles(
 			double h_diff = h_new - h_old;
 		
 			// sediment capacity
-			double c = max(-h_diff, params->p_min_slope) * p.vel * p.water * params->p_capacity;
+			double c = fmax(-h_diff, params->p_min_slope) * p.vel * p.water * params->p_capacity;
 
 			// decide whether to erode or deposit depending on particle properties
 			if(h_diff > 0 || p.sediment > c) {
 				double to_deposit = (h_diff > 0) ? 
-						min(p.sediment, h_diff) :
+						fmin(p.sediment, h_diff) :
 						(p.sediment - c) * params->p_deposition;
 				p.sediment -= to_deposit;
 				deposit(hmap, pos_old, to_deposit);	
 			} else {
-				double to_erode = min((c - p.sediment) * params->p_erosion, -h_diff);
+				double to_erode = fmin((c - p.sediment) * params->p_erosion, -h_diff);
 				p.sediment += to_erode;
 				erode(hmap, pos_old, to_erode, params->p_radius);
 			}
@@ -252,7 +244,7 @@ int main(int argc, char *argv[]) {
 	simulate_particles(&img, &params);
 
 	// Save results	
-	save_pgm(outputfilepath, &img, precision, true);
+	save_pgm(outputfilepath, &img, precision, ascii_out);
 
 	// free memory
 	release_image(&img);	
