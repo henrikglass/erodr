@@ -139,19 +139,20 @@ int save_pgm(
 	fprintf(fp, "%d\n", precision);	
 
 	double *buffer = (double *)img->buffer;
-
+	int byte_depth = precision < 256 ? 1 : 2; 
+		
 	if (ascii_encoding) {	
 		for(int i = 0; i < img->width * img->height; i++) {
 			fprintf(fp, "%d\n", (int)round(buffer[i]*precision));	
 		}
 	} else {
-		char data[sizeof(uint16_t) * img->width * img->height];
+		char *data = malloc(byte_depth * img->width * img->height);
 		for(int i = 0; i < img->width * img->height; i++) {
 			int gv = (uint16_t)round(buffer[i]*precision);
-			data[2 * i]		= (gv >> 8) & 0xFF;
-			data[2 * i + 1] = gv & 0xFF;
+			data[2 * i]	= (gv >> 8) & 0xFF;
+			data[2 * i + 1]	= gv & 0xFF;
 		}
-		fwrite(data, sizeof(uint16_t), img->width * img->height, fp); 
+		fwrite(data, byte_depth, img->width * img->height, fp); 
 	}	
 	fclose(fp);
 	
