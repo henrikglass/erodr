@@ -125,8 +125,10 @@ void erode(
 vec2 gradient_at(image *hmap, int x, int y) {
 	double *hmap_buffer = (double *) hmap->buffer;
 	int idx = y * hmap->width + x;
-	int right = idx + 1;
-	int below = idx + hmap->width;
+	//int right = y * hmap->width + min(x, hmap->width - 2);
+	//int below = min(y, hmap->height - 2) * hmap->width + x;
+	int right = idx + ((x > hmap->width - 2) ? 0 : 1);
+	int below = idx + ((y > hmap->height - 2) ? 0 : hmap->width);
 	vec2 g;
 	g.x = hmap_buffer[right] - hmap_buffer[idx]; 
 	g.y = hmap_buffer[below] - hmap_buffer[idx];
@@ -204,7 +206,7 @@ void simulate_particles(
 			// new height
 			double h_new = bil_interpolate_map_double(hmap, pos_new);
 			double h_diff = h_new - h_old;
-		
+				
 			// sediment capacity
 			double c = fmax(-h_diff, params->p_min_slope) * p.vel * p.water * params->p_capacity;
 
