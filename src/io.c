@@ -5,6 +5,7 @@
 #include <math.h>
 #include <stdio.h> 
 #include <stdint.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
@@ -12,14 +13,42 @@
 /*
  * Parses command line arguments.
  */
-int parse_args(int argc, char *argv[], char *filepath) {
-	if (argc == 1) {
-		printf("Usage: erodr FILE\n");
-		return 1;	
-	} else {
-		filepath = strncpy(filepath, argv[1], FILEPATH_MAXLEN);
-		return 0;
+int parse_args(
+		int argc,
+	   	char *argv[],
+	   	char *filepath,
+	   	char *outputfilepath,
+	   	sim_params *params,
+		bool *ascii_encoding
+) {
+	char c;
+	while((c = getopt(argc, argv, "af:o:n:r:e:c:g:v:s:d:m:")) != -1){
+		switch(c){
+			case 'f':	
+				strncpy(filepath, optarg, FILEPATH_MAXLEN);
+				break;
+			case 'o':
+				strncpy(outputfilepath, optarg, FILEPATH_MAXLEN);
+				break;
+			case 'a':
+				*ascii_encoding = true;
+				break;
+			case 'n': params->n = atoi(optarg); break;
+			case 'r': params->p_radius = atoi(optarg); break;
+			case 'e': params->p_enertia = atof(optarg); break;
+			case 'c': params->p_capacity = atof(optarg); break;
+			case 'g': params->p_gravity = atof(optarg); break;
+			case 'v': params->p_evaporation = atof(optarg); break;
+			case 's': params->p_erosion = atof(optarg); break;
+			case 'd': params->p_deposition = atof(optarg); break;
+			case 'm': params->p_min_slope = atof(optarg); break;
+			default:
+				fprintf(stderr, "Usage: %s\n", argv[0]);
+				return 1;
+		}	
 	}
+
+	return 0;
 }
 
 /*

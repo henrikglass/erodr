@@ -1,12 +1,12 @@
-#define DEFAULT_PARAM {70000, 30, 2, 0.1, 10, 4, 0.1, 0.1, 1, 0.0001}
-
 #include <time.h>
+#include <string.h>
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "vector.h"
 #include "io.h"
 #include "image.h"
+#include "params.h"
 
 double max(double a, double b){
 	return (a > b) ? a : b;
@@ -15,22 +15,6 @@ double max(double a, double b){
 double min(double a, double b){
 	return (a < b) ? a : b;
 }
-
-/*
- * Simulation parameters.
- */
-typedef struct sim_params {
-	int n;
-	int ttl;
-	int p_radius;
-	double p_enertia;
-	double p_capacity;
-	double p_gravity;
-	double p_evaporation;
-	double p_erosion;
-	double p_deposition;
-	double p_min_slope;
-} sim_params;
 
 /*
  * Particle type.
@@ -253,7 +237,10 @@ int main(int argc, char *argv[]) {
 
 	// parse args.
 	char filepath[FILEPATH_MAXLEN];
-	if(parse_args(argc, argv, filepath))
+	char outputfilepath[FILEPATH_MAXLEN];
+	strcpy(outputfilepath, OUTPUTFILEPATH_DEFAULT);
+	bool ascii_out = false;
+	if(parse_args(argc, argv, filepath, outputfilepath, &params, &ascii_out))
 		return 1;
 
 	// load pgm heightmap.
@@ -265,7 +252,7 @@ int main(int argc, char *argv[]) {
 	simulate_particles(&img, &params);
 
 	// Save results	
-	save_pgm("output.pgm", &img, precision, true);
+	save_pgm(outputfilepath, &img, precision, true);
 
 	// free memory
 	release_image(&img);	
