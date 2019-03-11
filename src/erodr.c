@@ -239,10 +239,16 @@ int main(int argc, char *argv[]) {
 	int precision;
 	if(load_pgm(filepath, &img, &precision))
 		return 1;
+	
+	long start = clock();
 
 	// simulate hydraulic erosion
 	simulate_particles(&img, &params);
 
+	
+	long end = clock();
+	printf("Time taken: %g\n", (double)(end-start)/CLOCKS_PER_SEC);
+		
 	// Save results	
 	save_pgm(outputfilepath, &img, precision, ascii_out);
 

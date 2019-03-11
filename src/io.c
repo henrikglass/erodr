@@ -21,8 +21,8 @@ int parse_args(
 	   	sim_params *params,
 		bool *ascii_encoding
 ) {
-	char c;
-	while((c = getopt(argc, argv, "af:o:n:r:e:c:g:v:s:d:m:")) != -1){
+	int c;
+	while((c = getopt(argc, argv, "af:o:n:t:r:e:c:g:v:s:d:m:")) != -1){
 		switch(c){
 			case 'f':	
 				strncpy(filepath, optarg, FILEPATH_MAXLEN);
@@ -33,6 +33,7 @@ int parse_args(
 			case 'a':
 				*ascii_encoding = true;
 				break;
+			case 't': params->ttl = atoi(optarg); break;
 			case 'n': params->n = atoi(optarg); break;
 			case 'r': params->p_radius = atoi(optarg); break;
 			case 'e': params->p_enertia = atof(optarg); break;

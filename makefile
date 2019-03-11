@@ -2,11 +2,13 @@
 TARGET 	= erodr
 
 # compiler
-CC 		= gcc
+# CC 		= gcc
+CC 		= clang
 CFLAGS 	= -O2 -std=c11 -Wall -pedantic #-g -pg 
 
 # linker
-LINKER 	= gcc
+#LINKER 	= gcc
+LINKER 	= clang
 LFLAGS 	= -lm
 
 # directories
