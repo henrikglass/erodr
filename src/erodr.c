@@ -76,12 +76,7 @@ void deposit(image *hmap, vec2 pos, double amount) {
  * Erodes heighmap `hmap` at position `pos` by amount `amount`.
  * Erosion is distributed over an area defined through p_radius.
  */
-void erode(
-		image *hmap,
-	   	vec2 pos,
-		double amount,
-	   	int radius
-) {	
+void erode(image *hmap, vec2 pos, double amount, int radius) {	
 	double *hmap_buffer = (double *) hmap->buffer;
 
 	if(radius < 1){
@@ -160,10 +155,7 @@ hg_tuple height_gradient_at(image *hmap, vec2 pos) {
 /*
  * Runs hydraulic erosion simulation.
  */
-void simulate_particles(
-		image *hmap,
-	   	sim_params *params
-) {
+void simulate_particles(image *hmap, sim_params *params) {
 	srand(time(NULL));
 	
 	// simulate each particle
@@ -250,14 +242,8 @@ int main(int argc, char *argv[]) {
 	if(load_pgm(filepath, &img, &precision))
 		return 1;
 	
-	long start = clock();
-
 	// simulate hydraulic erosion
 	simulate_particles(&img, &params);
-
-	
-	long end = clock();
-	printf("Time taken: %g\n", (double)(end-start)/CLOCKS_PER_SEC);
 		
 	// Save results	
 	save_pgm(outputfilepath, &img, precision, ascii_out);

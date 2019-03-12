@@ -21,8 +21,8 @@ int parse_args(
 );
 
 /*
- * Loads *.pgm into buffer `buffer`. `buffer` is dynamically allocated in 
- * load_pgm and should be free'd after use.
+ * Loads *.pgm into image `img`. `img` contains an internal buffer which is
+ * dynamically allocated in load_pgm and should be free'd after use.
  */
 int load_pgm(
 		const char *filepath,
@@ -31,7 +31,7 @@ int load_pgm(
 );
 
 /*
- * Saves buffer `buffer` to a file.
+ * Saves image `img` to a *.pgm file.
  */
 int save_pgm(
 		const char *filepath,
