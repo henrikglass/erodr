@@ -5,7 +5,7 @@ Erodr is an implementation of Hans Theobald Beyer's algorithm for simulated hydr
 Sadly, I can't remember what settings I used for this example.
 
 # Building
-To build, simply run `make erodr` in the root of the repository. I recommend to play around a bit with the optimization flags under CFLAGS in the makefile. On some machines I tested Erodr on "-O1" produced a faster result than both "-O2" and "-O3". Enabling "-march=native" may improve performance on some machines.
+To build, simply run `make erodr` in the root of the repository. I recommend to play around a bit with the optimization flags under CFLAGS in the makefile. On some machines "-O1" produced a faster result than both "-O2" and "-O3". Enabling "-march=native" may improve performance on some machines.
 
 # Usage
 ```
