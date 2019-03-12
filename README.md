@@ -5,7 +5,7 @@ Erodr is an implementation of Hans Theobald Beyer's algorithm for simulated hydr
 Sadly, I can't remember what settings I used for this example.
 
 # Building
-To build, simply run `make erodr` in the root of the repository.
+To build, simply run `make erodr` in the root of the repository. I recommend to play around a bit with the optimization flags under CFLAGS in the makefile. On some machines I tested Erodr on "-O1" produced a faster result than both "-O2" and "-O3". Enabling "-march=native" improve performance on some machines.
 
 # Usage
 ```
@@ -26,7 +26,7 @@ Other Options:
     -a                Output is ASCII encoded
 ```
 
-For input and output, Erodr so far only deals with grayscale heightmaps in Netpbm grayscale image format, i.e. \*.pgm files. With no other specified options except the input file (with -f), Erodr will run a simulation with the default parameters (listed above) and output the result to *output.pgm*. 
+For input and output, Erodr so far only deals with grayscale heightmaps in Netpbm grayscale image format, i.e. \*.pgm files. With no other specified options except the input file (with -f), Erodr will run a simulation with the default parameters (listed above) and output the result to *output.pgm*.
 
 # Contribution
 This project was written entirely for fun. If anyone wants to contribute feel free to create a pull request.
