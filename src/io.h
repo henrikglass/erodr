@@ -26,8 +26,7 @@ int parse_args(
  */
 int load_pgm(
 		const char *filepath,
-	   	image *img,
-		int *precision
+	   	image *img
 );
 
 /*
@@ -36,7 +35,6 @@ int load_pgm(
 int save_pgm(
 		const char *filepath,
 	   	image *img,
-		int precision,
 		bool ascii_encoding
 );
 

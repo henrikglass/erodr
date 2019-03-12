@@ -237,15 +237,14 @@ int main(int argc, char *argv[]) {
 		return 1;
 
 	// load pgm heightmap.
-	int precision;
-	if(load_pgm(filepath, &img, &precision))
+	if(load_pgm(filepath, &img))
 		return 1;
 	
 	// simulate hydraulic erosion
 	simulate_particles(&img, &params);
 		
 	// Save results	
-	save_pgm(outputfilepath, &img, precision, ascii_out);
+	save_pgm(outputfilepath, &img, ascii_out);
 
 	// free memory
 	release_image(&img);	
