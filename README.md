@@ -20,7 +20,7 @@ Simulation options:
     -v ##             Particle evaporation rate (default: 0.1)
     -s ##             Particle erosion coefficient (default: 0.1)
     -d ##             Particle deposition coefficient (default: 1.0)
-    -m ##             Minimun slope1 (default: 0.0001)
+    -m ##             Minimum slope (default: 0.0001)
 Other Options:
     -o <file>         Place the output into <file>
     -a                Output is ASCII encoded
