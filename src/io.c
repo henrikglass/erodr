@@ -4,6 +4,7 @@
 #define PRECISION_16 65535
 
 #include "io.h"
+#include "util.h"
 #include <math.h>
 #include <stdio.h> 
 #include <stdint.h>
@@ -55,6 +56,36 @@ int parse_args(
 }
 
 /*
+ * gets next value from *.pgm file.
+ */
+int pgm_next_value(FILE *fp, char *buffer, size_t size) {
+	int c = '\0';	
+	size_t i = 1;
+
+	while(c != EOF){
+		// skip spaces
+		while((c = fgetc(fp)) != EOF && isspace(c));
+
+		// skip commented lines	
+		if(c == '#'){
+			while(c != '\r' && c != '\n' && (c = fgetc(fp)) != EOF);
+		} else if (c != EOF){
+			// read values to buffer
+			buffer[0] = c;
+			for(; i < size && (c = fgetc(fp)) != EOF && !isspace(c); i++) {
+				buffer[i] = c;	
+			}
+
+			// null terminate
+			buffer[min(size - 1, i)] = '\0';
+			return i;
+		}
+	}
+
+	return EOF;	
+}
+
+/*
  * Loads *.pgm into image `img`. `img` contains an internal buffer which is
  * dynamically allocated in load_pgm and should be free'd after use.
  */
@@ -63,32 +94,24 @@ int load_pgm(
 		image *img
 ) {
 	FILE	*fp = fopen(filepath, "r");
-	char	*token;
 	char	*line = NULL;
-	char	*magic;
-	size_t	len = 0;
-	int		data_offset = 0;
+	char	magic[16];
+	char	value_buffer[16];
 	int		precision;
 
 	if(fp == NULL)
 		return 1;
-	
-	// read width, height and precision
-	// TODO rewrite properly
-	if (getline(&magic, &len, fp) == EOF) return 1; // magic
-	data_offset += len;
-	if (getline(&line, &len, fp) == EOF) return 1; // comment
-	data_offset += len;
-	if (getline(&line, &len, fp) == EOF) return 1; // width height
-	data_offset += len;
-	token   = strtok(line, " ");
-	img->width  = atoi(token);
-	token   = strtok(NULL, " ");
-	img->height = atoi(token);
-	if (getline(&line, &len, fp) == EOF) return 1; // precision
-	data_offset += len;
-	precision = atoi(line);
-	
+
+	// read header
+	pgm_next_value(fp, value_buffer, 16);
+	strncpy(magic, value_buffer, 16);
+	pgm_next_value(fp, value_buffer, 16);
+	img->width = atoi(value_buffer);
+	pgm_next_value(fp, value_buffer, 16);	
+	img->height = atoi(value_buffer);
+	pgm_next_value(fp, value_buffer, 16);
+	precision = atoi(value_buffer);
+
 	// Allocate buffer for pixel values
 	img->buffer = malloc(sizeof(double) * (img->height) * (img->width));
 	double *buffer = (double *) img->buffer;
@@ -99,8 +122,8 @@ int load_pgm(
 	// If magic is "P2" then values are ASCII encoded. 
 	// If magic is "P5" then values are binary encoded. 
 	if(strncmp(magic, "P2", 2) == 0){
-		for(int i = 0; getline(&line, &len, fp) != EOF; i++)
-			buffer[i] = atof(line) / precision;
+		for(int i = 0; pgm_next_value(fp, value_buffer, 16) != EOF; i++)
+			buffer[i] = atof(value_buffer) / precision;
 	} else if(strncmp(magic, "P5", 2) == 0) {
 		int byte_depth = precision <= PRECISION_8 ? 1 : 2; 
 		char data[byte_depth];
@@ -117,8 +140,6 @@ int load_pgm(
 	fclose(fp);
 	if(line)
 		free(line);
-	if(magic)
-		free(magic);
 
 	return 0;
 }

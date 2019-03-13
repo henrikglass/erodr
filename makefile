@@ -21,10 +21,12 @@ INCLUDES 	:= $(wildcard $(SRCDIR)/*.h)
 OBJECTS 	:= $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 
 # targets
+build: $(OBJDIR) $(TARGET)
+
 $(BINDIR)/$(TARGET): $(OBJECTS)
 	$(LINKER) $(OBJECTS) $(LFLAGS) -o $@
 
-$(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c $(OBJDIR)
+$(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(OBJDIR):

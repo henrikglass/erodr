@@ -7,6 +7,7 @@
 #include "io.h"
 #include "image.h"
 #include "params.h"
+#include "util.h"
 
 /*
  * Particle type.
@@ -26,14 +27,6 @@ typedef struct hg_tuple {
 	vec2 gradient;
 	double height;
 } hg_tuple;
-
-int min(int a, int b) {
-	return (a > b) ? b : a;
-}
-
-int max(int a, int b) {
-	return (a > b) ? a : b;
-}
 
 /*
  * Bilinearly interpolate double value at (x, y) in map.
