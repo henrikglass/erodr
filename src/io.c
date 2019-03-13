@@ -103,13 +103,13 @@ int load_pgm(
 		return 1;
 
 	// read header
-	pgm_next_value(fp, value_buffer, 16);
+	if(pgm_next_value(fp, value_buffer, 16) == EOF) return 1;
 	strncpy(magic, value_buffer, 16);
-	pgm_next_value(fp, value_buffer, 16);
+	if(pgm_next_value(fp, value_buffer, 16) == EOF) return 1;
 	img->width = atoi(value_buffer);
-	pgm_next_value(fp, value_buffer, 16);	
+	if(pgm_next_value(fp, value_buffer, 16) == EOF) return 1;
 	img->height = atoi(value_buffer);
-	pgm_next_value(fp, value_buffer, 16);
+	if(pgm_next_value(fp, value_buffer, 16) == EOF) return 1;
 	precision = atoi(value_buffer);
 
 	// Allocate buffer for pixel values
