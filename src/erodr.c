@@ -157,7 +157,7 @@ void simulate_particles(image *hmap, sim_params *params) {
 
 		// spawn particle.
 		particle p;
-		double denom = (RAND_MAX / (hmap->width - 1));
+		double denom = (RAND_MAX / ((double)hmap->width - 1.0));
 		p.pos = (vec2){(double)rand() / denom, (double)rand() / denom};	
 		p.dir = (vec2){0, 0};
 		p.vel = 0;
