@@ -227,11 +227,11 @@ int main(int argc, char *argv[]) {
 	strcpy(outputfilepath, OUTPUTFILEPATH_DEFAULT);
 	bool ascii_out = false;
 	if(parse_args(argc, argv, filepath, outputfilepath, &params, &ascii_out))
-		return 1;
+		exit_with_info(1);
 
 	// load pgm heightmap.
 	if(load_pgm(filepath, &img))
-		return 1;
+		exit_with_info(1);
 	
 	// simulate hydraulic erosion
 	simulate_particles(&img, &params);

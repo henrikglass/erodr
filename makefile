@@ -4,7 +4,7 @@ TARGET 	= erodr
 # compiler
 #CC 		= gcc
 CC 		= clang
-CFLAGS 	= -O2 -std=c99 -Wall -pedantic #-march=native #-pg -g
+CFLAGS 	= -O1 -std=c99 -Wall -pedantic #-march=native #-pg -g
 
 # linker
 #LINKER 	= gcc
