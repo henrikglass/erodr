@@ -2,14 +2,20 @@
 TARGET 	= erodr
 
 # compiler
-CC 		= gcc
-#CC 		= clang
-CFLAGS 	= -O1 -std=c99 -Wall -pedantic -fopenmp #-march=native #-pg -g
+#CC 		= gcc
+CC 		= clang
+
+# compiler specific flags
+#CSFLAGS = -fopenmp # gcc
+CSFLAGS = -fopenmp=libomp # clang
+
+# other flags
+CFLAGS 	= -O1 -std=c99 -Wall -pedantic #-march=native #-pg -g
 
 # linker
-LINKER 	= gcc
-#LINKER 	= clang
-LFLAGS 	= -lm -fopenmp #-pg
+#LINKER 	= gcc
+LINKER 	= clang
+LFLAGS 	= -lm #-pg
 
 # directories
 OBJDIR 	= obj
@@ -24,10 +30,10 @@ OBJECTS 	:= $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 build: $(OBJDIR) $(TARGET)
 
 $(BINDIR)/$(TARGET): $(OBJECTS)
-	$(LINKER) $(OBJECTS) $(LFLAGS) -o $@
+	$(LINKER) $(OBJECTS) $(LFLAGS) $(CSFLAGS) -o $@
 
 $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(CSFLAGS) -c $< -o $@
 
 $(OBJDIR):
 	mkdir $(OBJDIR)
