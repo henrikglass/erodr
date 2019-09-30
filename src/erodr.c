@@ -86,8 +86,8 @@ void erode(image *hmap, vec2 pos, double amount, int radius) {
 	// construct erosion/deposition kernel.
 	double kernel[2*radius + 1][2*radius + 1];
 	double kernel_sum = 0;
-	for(int y = y_start; y < y_end; y++) {
-		for(int x = x_start; x < x_end; x++) {
+    for(int y = y_start; y < y_end; y++) {
+        for(int x = x_start; x < x_end; x++) {
 			double d_x = x - pos.x;
 			double d_y = y - pos.y;
 			double distance = sqrt(d_x*d_x + d_y*d_y);
@@ -151,6 +151,7 @@ void simulate_particles(image *hmap, sim_params *params) {
 	srand(time(NULL));
 	
 	// simulate each particle
+    #pragma omp parallel for
 	for(int i = 0; i < params->n; i++) {
 		if(!((i+1) % 10000))
 			printf("Particles simulated: %d\n", i+1);
