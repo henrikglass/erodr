@@ -29,3 +29,8 @@ For input and output, Erodr so far only deals with grayscale heightmaps in Netpb
 
 # Contribution
 This project was written entirely for fun. If anyone wants to contribute feel free to create a pull request.
+
+# Keep in mind
+The software is provided "as is".
+
+[![works badge](https://cdn.jsdelivr.net/gh/nikku/works-on-my-machine@v0.2.0/badge.svg)](https://github.com/nikku/works-on-my-machine)
