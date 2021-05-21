@@ -233,10 +233,14 @@ int main(int argc, char *argv[]) {
 	// load pgm heightmap.
 	if(load_pgm(filepath, &img))
 		exit_with_info(1);
-	
+
 	// simulate hydraulic erosion
 	simulate_particles(&img, &params);
-		
+	
+    // Maybe clamp
+    if (maybe_clamp(&img))
+        print_clipping_warning();
+
 	// Save results	
 	save_pgm(outputfilepath, &img, ascii_out);
 

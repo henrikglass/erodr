@@ -27,9 +27,6 @@ Other Options:
 
 For input and output, Erodr so far only deals with grayscale heightmaps in Netpbm grayscale image format, i.e. \*.pgm files. With no other specified options except the input file (with -f), Erodr will run a simulation with the default parameters (listed above) and output the result to *output.pgm*.
 
-# A known issue
-Input images that contains completely black areas can cause erodr to produce spike artifacts. This is because any erosion below the minimum value (0) simply wraps around to the maximum value. Why isn't this fixed? Because I'm lazy. Also, because there is a simple workaround; just raise the floor a bit. If you experience this issue, open your image in an image editor and lower the contrast slightly before using it with erodr. Alternatively, feel free fix the issue yourself and create a pull request.
-
 # Contribution
 This project was written entirely for fun. If anyone wants to contribute feel free to create a pull request.
 

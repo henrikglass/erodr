@@ -181,3 +181,23 @@ int save_pgm(
 	return 0;
 }
 
+/*
+ * Checks if image `img` is black or white clipping and performs
+ * clamping to [0.0, 1.0] if necessary. Returns true if `img` is 
+ * clipping and output is clamped.
+ */
+bool maybe_clamp(image *img) {
+    bool clamped = false;
+    int size = img->width * img->height;
+	double *buffer = (double *)img->buffer;
+    for (int i = 0; i < size; i++) {
+        double value = buffer[i];
+        if (value > 0.0 && value < 1.0)
+            continue;
+        value = (value < 0.0) ? 0.0 : value;
+        value = (value > 1.0) ? 1.0 : value;
+        buffer[i] = value;
+        clamped = true;
+    }    
+    return clamped;
+}

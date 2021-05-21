@@ -38,4 +38,11 @@ int save_pgm(
 		bool ascii_encoding
 );
 
+/*
+ * Checks if image `img` is black or white clipping and performs
+ * clamping to [0.0, 1.0] if necessary. Returns true if `img` is 
+ * clipping and output is clamped.
+ */
+bool maybe_clamp(image *img);
+
 #endif

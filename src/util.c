@@ -11,6 +11,16 @@ int max(int a, int b) {
 }
 
 /*
+ * Prints clipping outpute warning.
+ */
+void print_clipping_warning() {
+    printf("\n\nWARNING: Output is clipping.\n\n");
+    printf("The image has been clamped. Some information is lost.\n");
+    printf("To avoid this warning, make sure the input image is not\n");
+    printf("clipping or nearly clipping.\n");
+}
+
+/*
  * Exit with exit code `exit_code` and print info.
  */
 void exit_with_info(int exit_code) {
