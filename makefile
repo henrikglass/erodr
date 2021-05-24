@@ -2,19 +2,19 @@
 TARGET 	= erodr
 
 # compiler
-#CC 		= gcc
-CC 		= clang
+CC 		= gcc
+#CC 		= clang
 
 # compiler specific flags
-#CSFLAGS = -fopenmp # gcc
-CSFLAGS = -fopenmp=libomp # clang
+CSFLAGS = -fopenmp # gcc
+#CSFLAGS = -fopenmp=libomp # clang
 
 # other flags
 CFLAGS 	= -O1 -std=c99 -Wall -pedantic #-march=native #-pg -g
 
 # linker
-#LINKER 	= gcc
-LINKER 	= clang
+LINKER 	= gcc
+#LINKER 	= clang
 LFLAGS 	= -lm #-pg
 
 # directories
