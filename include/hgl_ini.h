@@ -153,7 +153,9 @@ void hgl_ini_fprint(FILE *stream, HglIni *ini);
 #include <assert.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#if 0
 #include <sys/mman.h>
+#endif
 #include <unistd.h>
 
 #if !defined(HGL_INI_ALLOC) &&   \
@@ -196,6 +198,7 @@ typedef struct HglIniKVPair
     char *key;
     char *val;
 } HglIniKVPair;
+
 typedef HglIniDa(struct HglIniKVPair) HglIniKVPairs;
 
 /**
@@ -274,14 +277,20 @@ static void eat_string_until_in_line(HglIniCursor *cursor, char end_char)
 
 HglIni *hgl_ini_parse(const char *filepath)
 {
-    int fd = -1;
+    char *data = NULL;
+    FILE *fp = NULL;
+
     HglIni *ini = HGL_INI_ALLOC(sizeof(HglIni));
     if (ini == NULL) {
         fprintf(stderr, "[hgl_ini_parse] Error: Buy more ram lol\n");
         goto out_error;
     }
+    memset(ini, 0, sizeof(*ini));
 
+    /* FORGET IT. Not supported on mingw/windows. */
+#if 0
     /* open file in read binary mode */
+    int fd = -1;
     fd = open(filepath, O_RDWR);
     if (fd == -1) {
         fprintf(stderr, "[hgl_ini_parse] Error: errno=%s\n", strerror(errno));
@@ -297,7 +306,6 @@ HglIni *hgl_ini_parse(const char *filepath)
     }
 
     /* mmap file */
-    ssize_t file_size = sb.st_size;
     char *data = mmap(NULL,                   /* Let kernel choose page-aligned address */
                       file_size,              /* Length of mapping in bytes */
                       PROT_READ | PROT_WRITE, /* Readable & writable */
@@ -309,6 +317,36 @@ HglIni *hgl_ini_parse(const char *filepath)
                 strerror(errno));
         goto out_error;
     }
+#else
+    fp = fopen(filepath, "rb");
+    if (fp == NULL) {
+        fprintf(stderr, "[hgl_ini_parse] Error: errno=%s\n", strerror(errno));
+        goto out_error;
+    }
+
+    /* get file size */
+    fseek(fp, 0, SEEK_END);
+    ssize_t file_size = ftell(fp);
+    rewind(fp);
+    if (file_size < 0) {
+        fprintf(stderr, "[hgl_ini_parse] Error: errno=%s\n", strerror(errno));
+        goto out_error;
+    }
+
+    /* allocate memory for data */
+    data = HGL_INI_ALLOC(file_size);
+    if (data == NULL) {
+        fprintf(stderr, "[hgl_ini_parse] Error: Allocation of %zu bytes failed.\n", file_size);
+        goto out_error;
+    }
+
+    /* read file */
+    ssize_t n_read_bytes = fread(data, 1, file_size, fp);
+    if (n_read_bytes != file_size) {
+        fprintf(stderr, "[hgl_ini_parse] Error: Failed reading file %s\n", filepath);
+        goto out_error;
+    }
+#endif
 
     /* parse ini file contents */
     HglIniCursor cursor = {
@@ -397,13 +435,27 @@ HglIni *hgl_ini_parse(const char *filepath)
         }
     }
 
+#if 0
     close(fd);
+#else
+    fclose(fp);
+    HGL_INI_FREE(data);
+#endif
     return ini;
 
 out_error:
+#if 0
     if (fd != -1) {
         close(fd);
     }
+#else
+    if (fp != NULL) {
+        fclose(fp);
+    }
+    if (data != NULL) {
+        HGL_INI_FREE(data);
+    }
+#endif
     hgl_ini_free(ini);
     return NULL;
 }

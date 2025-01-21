@@ -1,6 +1,7 @@
 *.sh
 plotpoints.gpl
 exampleInput/
+releases/
 toplot.txt
 kladd
 kladd.txt
