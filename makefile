@@ -1,42 +1,28 @@
-# project
-TARGET 	= erodr
 
-# compiler
-CC 		= gcc
-#CC 		= clang
+.PHONY: build clean linux linux-omp windows windows-omp
 
-# compiler specific flags
-CSFLAGS = -fopenmp # gcc
-#CSFLAGS = -fopenmp=libomp # clang
+SHELL     := /bin/bash
+TARGET    := erodr
+C_FLAGS   := -Werror -Wall -Wextra -Wno-unknown-pragmas -pedantic --std=c17 -Iinclude -O3 -ggdb3
+L_FLAGS   := -lm
+GCC 	  := gcc
+MINGW_GCC := x86_64-w64-mingw32-gcc
 
-# other flags
-CFLAGS 	= -O1 -std=c99 -Wall -pedantic #-march=native #-pg -g
+all: linux-omp
 
-# linker
-LINKER 	= gcc
-#LINKER 	= clang
-LFLAGS 	= -lm #-pg
+linux:
+	gcc $(C_FLAGS) src/erodr.c src/io.c src/image.c src/util.c -o $(TARGET) $(L_FLAGS)
+	 
+linux-omp:
+	gcc $(C_FLAGS) -fopenmp src/erodr.c src/io.c src/image.c src/util.c -o $(TARGET) $(L_FLAGS)
 
-# directories
-OBJDIR 	= obj
-SRCDIR 	= src
-BINDIR 	= .
+windows:
+	x86_64-w64-mingw32-gcc $(C_FLAGS) src/erodr.c src/io.c src/image.c src/util.c -o $(TARGET).exe $(L_FLAGS)
 
-SOURCES		:= $(wildcard $(SRCDIR)/*.c)
-INCLUDES 	:= $(wildcard $(SRCDIR)/*.h)
-OBJECTS 	:= $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
-
-# targets
-build: $(OBJDIR) $(TARGET)
-
-$(BINDIR)/$(TARGET): $(OBJECTS)
-	$(LINKER) $(OBJECTS) $(LFLAGS) $(CSFLAGS) -o $@
-
-$(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
-	$(CC) $(CFLAGS) $(CSFLAGS) -c $< -o $@
-
-$(OBJDIR):
-	mkdir $(OBJDIR)
+windows-omp:
+	x86_64-w64-mingw32-gcc $(C_FLAGS) -fopenmp src/erodr.c src/io.c src/image.c src/util.c -o $(TARGET).exe $(L_FLAGS)
 
 clean:
-	rm $(BINDIR)/$(TARGET) & rm $(OBJDIR)/*.o
+	-rm $(TARGET)
+	-rm $(TARGET).exe
+

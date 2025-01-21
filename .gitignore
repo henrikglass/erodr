@@ -6,6 +6,7 @@ kladd
 kladd.txt
 *.out
 erodr
+tags
 *.o
 *.swp
 *.pgm

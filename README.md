@@ -4,7 +4,15 @@ Erodr is an implementation of Hans Theobald Beyer's algorithm for simulated hydr
 ![alt text](https://i.gyazo.com/c1b0deb140a5d156bddc0780979f32cd.png)
 
 # Building
-To build, simply run `make` in the root of the repository. I recommend to play around a bit with the optimization flags under CFLAGS in the makefile. On some machines "-O1" produced a faster result than both "-O2" and "-O3". Enabling "-march=native" may improve performance on some machines.
+
+## linux
+To build for linux simply run `make` (equivalent to `make linux-omp`), `make linux`, or `make linux-omp`.
+
+## windows
+To build for windows (requires mingw-w64) run `make windows` or `make windows-omp`. 
+
+## Note on openmp
+Targets with the `-omp` suffix utilize openmp to parallelize the algorithm and should run much faster. Keep in mind that the OpenMP implementation of Erodr hasn't been thorougly tested. If you experience any odd issues or bugs use the standard single-threaded version.
 
 # Usage
 ```
@@ -21,11 +29,30 @@ Simulation options:
     -d ##             Particle deposition coefficient (default: 1.0)
     -m ##             Minimum slope (default: 0.0001)
 Other Options:
+    -p <ini-file>     Use provided parameter ini file. See examples/params.ini for an example.
     -o <file>         Place the output into <file>
     -a                Output is ASCII encoded
 ```
 
 For input and output, Erodr so far only deals with grayscale heightmaps in Netpbm grayscale image format, i.e. \*.pgm files. With no other specified options except the input file (with -f), Erodr will run a simulation with the default parameters (listed above) and output the result to *output.pgm*.
+
+Note: The default parameters listed above have been tuned for a 512x512 heightmap.
+
+## Example usage
+Run Erodr on input heightmap `examples/heightmap` using the default simulation parameters:
+```
+$ ./erodr -f examples/heightmap.pgm
+```
+
+Run Erodr on input heightmap `examples/heightmap` provided with the simulation parameters in `examples/params.ini`:
+```
+$ ./erodr -f examples/heightmap.pgm -p examples/params.ini
+```
+
+As above, but use Earth gravity:
+```
+$ ./erodr -f examples/heightmap.pgm -p examples/params.ini -g 9.81
+```
 
 # Contribution
 This project was written entirely for fun. If anyone wants to contribute feel free to create a pull request.
