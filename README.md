@@ -12,7 +12,7 @@ To build for linux simply run `make` (equivalent to `make linux-omp`), `make lin
 To build for windows (requires mingw-w64) run `make windows` or `make windows-omp`. 
 
 ## Note on openmp
-Targets with the `-omp` suffix utilize openmp to parallelize the algorithm and should run much faster. Keep in mind that the OpenMP implementation of Erodr hasn't been thorougly tested. If you experience any odd issues or bugs use the standard single-threaded version.
+Targets with the `-omp` suffix utilize OpenMP to parallelize the algorithm and should run much faster. Keep in mind that the OpenMP implementation of Erodr hasn't been thoroughly tested. If you experience any odd issues or bugs use the standard single-threaded version.
 
 # Usage
 ```
