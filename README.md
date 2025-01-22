@@ -8,6 +8,8 @@ Erodr is an implementation of Hans Theobald Beyer's algorithm for simulated hydr
 ## linux
 To build for linux simply run `make` (equivalent to `make linux-omp`), `make linux`, or `make linux-omp`.
 
+You can also build a statically linked binary using musl libc by running `make linux-musl`.
+
 ## windows
 To build for windows (requires mingw-w64) run `make windows` or `make windows-omp`. 
 
