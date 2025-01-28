@@ -24,7 +24,7 @@ Simulation options:
     -t ##             Maximum lifetime of a particle (default: 30)
     -g ##             Gravitational constant (default: 4)
     -r ##             Particle erosion radius (default: 2)
-    -e ##             Particle enertia coefficient (default: 0.1)
+    -e ##             Particle inertia coefficient (default: 0.1)
     -c ##             Particle capacity coefficient (default: 10)
     -v ##             Particle evaporation rate (default: 0.1)
     -s ##             Particle erosion coefficient (default: 0.1)

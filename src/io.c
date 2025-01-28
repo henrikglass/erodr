@@ -41,12 +41,13 @@ SimulationParameters io_read_params_ini(const char *filepath)
     HglIni *params_ini = hgl_ini_parse(filepath);
     if (params_ini == NULL) {
         fprintf(stderr, "Error opening/parsing `%s`.\n", optarg);
+        goto out;
     }
 
     GET_INI_PARAM_INT(parameters, params_ini, ttl);
     GET_INI_PARAM_INT(parameters, params_ini, n);
     GET_INI_PARAM_INT(parameters, params_ini, p_radius);
-    GET_INI_PARAM_FLOAT(parameters, params_ini, p_enertia);
+    GET_INI_PARAM_FLOAT(parameters, params_ini, p_inertia);
     GET_INI_PARAM_FLOAT(parameters, params_ini, p_capacity);
     GET_INI_PARAM_FLOAT(parameters, params_ini, p_gravity);
     GET_INI_PARAM_FLOAT(parameters, params_ini, p_evaporation);
@@ -54,81 +55,81 @@ SimulationParameters io_read_params_ini(const char *filepath)
     GET_INI_PARAM_FLOAT(parameters, params_ini, p_deposition);
     GET_INI_PARAM_FLOAT(parameters, params_ini, p_min_slope);
 
+out:
     hgl_ini_free(params_ini);
-
     return parameters;
 }
 
 /*
  * Parses command line arguments.
  */
-int io_parse_args(int argc,
-                  char *argv[],
-                  char *filepath,
-                  char *outputfilepath,
-                  SimulationParameters *params,
-                  bool *ascii_encoding) 
-{
-    int c;
-    while((c = getopt(argc, argv, "af:o:p:n:t:r:e:c:g:v:s:d:m:")) != -1){
-        switch(c){
-            /* input heightmap filepath */
-            case 'f': {
-                strncpy(filepath, optarg, IO_FILEPATH_MAXLEN);
-            } break;
-
-            /* parameter *.ini filepath */
-            case 'p': {
-                *params = io_read_params_ini(optarg);
-                //HglIni *params_ini = hgl_ini_parse(optarg);
-                //if (params_ini == NULL) {
-                //    fprintf(stderr, "Error opening/parsing `%s`.\n", optarg);
-                //}
-
-                ////if (hgl_ini_has(params_ini, "SimulationParameters", "p_gravity")) { params->p_gravity = hgl_ini_get_u64(params_ini, "SimulationParameters", "p_gravity");}
-                //GET_INI_PARAM_INT(params_ini, ttl);
-                //GET_INI_PARAM_INT(params_ini, n);
-                //GET_INI_PARAM_INT(params_ini, p_radius);
-                //GET_INI_PARAM_FLOAT(params_ini, p_enertia);
-                //GET_INI_PARAM_FLOAT(params_ini, p_capacity);
-                //GET_INI_PARAM_FLOAT(params_ini, p_gravity);
-                //GET_INI_PARAM_FLOAT(params_ini, p_evaporation);
-                //GET_INI_PARAM_FLOAT(params_ini, p_erosion);
-                //GET_INI_PARAM_FLOAT(params_ini, p_deposition);
-                //GET_INI_PARAM_FLOAT(params_ini, p_min_slope);
-
-                //hgl_ini_free(params_ini);
-            } break;
-
-            /* output heightmap filepath */
-            case 'o': {
-                strncpy(outputfilepath, optarg, IO_FILEPATH_MAXLEN);
-            } break;
-
-            /* use ascii encoding for the output *.pgm file */
-            case 'a': {
-                *ascii_encoding = true;
-            } break;
-
-            /* parameter overrides */
-            case 't': params->ttl = atoi(optarg); break;
-            case 'n': params->n = atoi(optarg); break;
-            case 'r': params->p_radius = atoi(optarg); break;
-            case 'e': params->p_enertia = atof(optarg); break;
-            case 'c': params->p_capacity = atof(optarg); break;
-            case 'g': params->p_gravity = atof(optarg); break;
-            case 'v': params->p_evaporation = atof(optarg); break;
-            case 's': params->p_erosion = atof(optarg); break;
-            case 'd': params->p_deposition = atof(optarg); break;
-            case 'm': params->p_min_slope = atof(optarg); break;
-            default:
-                fprintf(stderr, "Usage: %s\n", argv[0]);
-                return 1;
-        }   
-    }
-
-    return 0;
-}
+//int io_parse_args(int argc,
+//                  char *argv[],
+//                  char *filepath,
+//                  char *outputfilepath,
+//                  SimulationParameters *params,
+//                  bool *ascii_encoding) 
+//{
+//    int c;
+//    while((c = getopt(argc, argv, "af:o:p:n:t:r:e:c:g:v:s:d:m:")) != -1){
+//        switch(c){
+//            /* input heightmap filepath */
+//            case 'f': {
+//                strncpy(filepath, optarg, IO_FILEPATH_MAXLEN);
+//            } break;
+//
+//            /* parameter *.ini filepath */
+//            case 'p': {
+//                *params = io_read_params_ini(optarg);
+//                //HglIni *params_ini = hgl_ini_parse(optarg);
+//                //if (params_ini == NULL) {
+//                //    fprintf(stderr, "Error opening/parsing `%s`.\n", optarg);
+//                //}
+//
+//                ////if (hgl_ini_has(params_ini, "SimulationParameters", "p_gravity")) { params->p_gravity = hgl_ini_get_u64(params_ini, "SimulationParameters", "p_gravity");}
+//                //GET_INI_PARAM_INT(params_ini, ttl);
+//                //GET_INI_PARAM_INT(params_ini, n);
+//                //GET_INI_PARAM_INT(params_ini, p_radius);
+//                //GET_INI_PARAM_FLOAT(params_ini, p_inertia);
+//                //GET_INI_PARAM_FLOAT(params_ini, p_capacity);
+//                //GET_INI_PARAM_FLOAT(params_ini, p_gravity);
+//                //GET_INI_PARAM_FLOAT(params_ini, p_evaporation);
+//                //GET_INI_PARAM_FLOAT(params_ini, p_erosion);
+//                //GET_INI_PARAM_FLOAT(params_ini, p_deposition);
+//                //GET_INI_PARAM_FLOAT(params_ini, p_min_slope);
+//
+//                //hgl_ini_free(params_ini);
+//            } break;
+//
+//            /* output heightmap filepath */
+//            case 'o': {
+//                strncpy(outputfilepath, optarg, IO_FILEPATH_MAXLEN);
+//            } break;
+//
+//            /* use ascii encoding for the output *.pgm file */
+//            case 'a': {
+//                *ascii_encoding = true;
+//            } break;
+//
+//            /* parameter overrides */
+//            case 't': params->ttl = atoi(optarg); break;
+//            case 'n': params->n = atoi(optarg); break;
+//            case 'r': params->p_radius = atoi(optarg); break;
+//            case 'e': params->p_inertia = atof(optarg); break;
+//            case 'c': params->p_capacity = atof(optarg); break;
+//            case 'g': params->p_gravity = atof(optarg); break;
+//            case 'v': params->p_evaporation = atof(optarg); break;
+//            case 's': params->p_erosion = atof(optarg); break;
+//            case 'd': params->p_deposition = atof(optarg); break;
+//            case 'm': params->p_min_slope = atof(optarg); break;
+//            default:
+//                fprintf(stderr, "Usage: %s\n", argv[0]);
+//                return 1;
+//        }   
+//    }
+//
+//    return 0;
+//}
 
 /*
  * gets next value from *.pgm file.

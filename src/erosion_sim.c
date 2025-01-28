@@ -170,8 +170,8 @@ void erosion_sim_run(ErodrImage *hmap, SimulationParameters *params) {
             float h_old = hg.height; 
 
             // calculate new dir vector
-            p.dir = vec2_sub(vec2_scalar_mul(params->p_enertia, p.dir),
-                             vec2_scalar_mul(1 - params->p_enertia, g));
+            p.dir = vec2_sub(vec2_scalar_mul(params->p_inertia, p.dir),
+                             vec2_scalar_mul(1 - params->p_inertia, g));
             p.dir = vec2_normalize(p.dir);
 
             // calculate new pos

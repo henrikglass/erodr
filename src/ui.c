@@ -12,8 +12,8 @@
 #include <assert.h>
 #include <stdio.h>
 
-#define PAN_INERTIA 0.8f
-#define ZOOM_INERTIA 0.6f
+#define PAN_INERTIA 0.9f
+#define ZOOM_INERTIA 0.7f
 #define ZOOM_DEFAULT 100.0f
 #define PLANE_SIZE 64.0f
 
@@ -34,10 +34,12 @@ void *ui_run(void *args)
     UiArgs *ui_args = (UiArgs *) args;
     ErodrImage *hmap = ui_args->hmap;
     HglChan *c = ui_args->chan;
+    SimulationParameters *sim_params = ui_args->sim_params;
 
     int screen_width  = 1600;
     int screen_height =  900;
 
+    bool running = true;
     float gain = 16.0f;
 
     /* Window */
@@ -82,7 +84,7 @@ void *ui_run(void *args)
     Vector2 mouse = Vector2Zero();
     float zoom = 0.0f;
 
-    while (!WindowShouldClose()) {
+    while (running) {
         /* ====== update ================================ */
 
         /* handle resizing */
@@ -104,6 +106,18 @@ void *ui_run(void *args)
         /* reset heightmap */
         if (IsKeyPressed(KEY_R)) {
             hgl_chan_send(c, (void *)CMD_RESET_HMAP);
+        }
+
+        /* reload simulation parameters */
+        if (IsKeyPressed(KEY_S)) {
+            hgl_chan_send(c, (void *)CMD_RELOAD_SIMPARAMS);
+        }
+
+        /* handle closing */
+        running = !WindowShouldClose();
+        if (IsKeyPressed(KEY_Q)) {
+            running = false;
+            break;
         }
 
         /* re-run simulation */
@@ -163,10 +177,6 @@ void *ui_run(void *args)
                 float xf = (float)x / (float)LOW_RES_PREVIEW_MESH_SIZE;
                 float yf = (float)y / (float)LOW_RES_PREVIEW_MESH_SIZE;
                 mesh_data[y][x][1] = gain * sample_hmap(hmap, xf, yf);
-                //(void) hmap;
-                //(void) xf;
-                //(void) yf;
-                //mesh_data[y][x][1] = 1.0f;
             }
         }
         UpdateMeshBuffer(hmap_mesh, 0, mesh_data, sizeof(mesh_data), 0);
@@ -177,15 +187,40 @@ void *ui_run(void *args)
         BeginDrawing();
             ClearBackground(RAYWHITE);
             BeginMode3D(camera);
-                //rlDisableDepthTest();
-                //DrawGrid(100, 1.0f);
                 DrawMesh(hmap_mesh, hmap_material, hmap_tform);
             EndMode3D();
             DrawFPS(screen_width - 100, 10);
-            DrawText("Commands: ", 10, 10, 30, BLACK);
-            DrawText(TextFormat("g - gain (%2.2f)", gain), 10, 50, 24, BLACK);
+            DrawText("Commands: ", 10, 10, 38, BLACK);
+            DrawText(TextFormat("g - change gain (visualization only) (%2.2f)", gain), 10, 50, 30, BLACK);
+            DrawText(TextFormat("r - reset heightmap"), 10, 80, 30, BLACK);
+            DrawText(TextFormat("s - reload simulation parameters from file"), 10, 110, 30, BLACK);
             DrawText(TextFormat("p - projection mode (%s)", (camera.projection == CAMERA_PERSPECTIVE) ? 
-                                "perspective" : "orthographic"), 10, 80, 24, BLACK);
+                                "perspective" : "orthographic"), 10, 140, 30, BLACK);
+            DrawText(TextFormat("Enter - run erosion simulation"), 10, 170, 30, BLACK);
+            DrawText(TextFormat("Esc/q - exit"), 10, 200, 30, BLACK);
+
+            const int ypos = screen_height - 350;
+            DrawText("Simulation Parameters: ", 10, screen_height - 350, 38, BLACK);
+            DrawText("# of particles", 10, ypos + 40, 30, BLACK); 
+            DrawText(TextFormat("= %d", sim_params->n), 300, ypos + 40, 30, BLACK);
+            DrawText("ttl          ", 10, ypos + 70, 30, BLACK); 
+            DrawText(TextFormat("= %d", sim_params->ttl), 300, ypos + 70, 30, BLACK);
+            DrawText("p_radius     ", 10, ypos + 100, 30, BLACK); 
+            DrawText(TextFormat("= %d", sim_params->p_radius), 300, ypos + 100, 30, BLACK);
+            DrawText("p_inertia    ", 10, ypos + 130, 30, BLACK); 
+            DrawText(TextFormat("= %f", sim_params->p_inertia), 300, ypos + 130, 30, BLACK);
+            DrawText("p_capacity   ", 10, ypos + 160, 30, BLACK); 
+            DrawText(TextFormat("= %f", sim_params->p_capacity), 300, ypos + 160, 30, BLACK);
+            DrawText("p_gravity    ", 10, ypos + 190, 30, BLACK); 
+            DrawText(TextFormat("= %f", sim_params->p_gravity), 300, ypos + 190, 30, BLACK);
+            DrawText("p_evaporation", 10, ypos + 220, 30, BLACK); 
+            DrawText(TextFormat("= %f", sim_params->p_evaporation), 300, ypos + 220, 30, BLACK);
+            DrawText("p_erosion    ", 10, ypos + 250, 30, BLACK); 
+            DrawText(TextFormat("= %f", sim_params->p_erosion), 300, ypos + 250, 30, BLACK);
+            DrawText("p_deposition ", 10, ypos + 280, 30, BLACK); 
+            DrawText(TextFormat("= %f", sim_params->p_deposition), 300, ypos + 280, 30, BLACK);
+            DrawText("p_min_slope  ", 10, ypos + 310, 30, BLACK); 
+            DrawText(TextFormat("= %f", sim_params->p_min_slope), 300, ypos + 310, 30, BLACK);
         EndDrawing();
     }
 

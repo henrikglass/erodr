@@ -65,7 +65,9 @@ typedef struct
     pthread_cond_t cvar_writable;
     pthread_cond_t cvar_readable;
     bool readable;
+#ifndef _WIN32
     int efd;
+#endif
 } HglChan;
 
 /**
@@ -103,6 +105,7 @@ void *hgl_chan_recv(HglChan *c);
  */
 void *hgl_chan_try_recv(HglChan *c);
 
+#ifndef _WIN32
 /**
  * Wait on any number (<= 128) of channels simultaneously, until at least one
  * of them becomes readable (i.e. something was sent on the channel). Returns
@@ -115,14 +118,18 @@ HglChan *hgl_chan_select(int n_args, ...);
  * list. If there are no readable channels NULL is returned.
  */
 HglChan *hgl_chan_try_select(int n_args, ...);
+#endif
 
 #endif
 
 #ifdef HGL_CHAN_IMPLEMENTATION
 
+#ifndef _WIN32
 #include <sys/eventfd.h>
-#include <unistd.h>
 #include <poll.h>
+#endif
+
+#include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -134,7 +141,9 @@ HglChan hgl_chan_make()
     err  = pthread_mutex_init(&c.mutex, NULL);
     err |= pthread_cond_init(&c.cvar_writable, NULL);
     err |= pthread_cond_init(&c.cvar_readable, NULL);
+#ifndef _WIN32
     c.efd = eventfd(0, 0);
+#endif
     if (err != 0) {
         fprintf(stderr, "[hgl_chan.h]: Failed to create channel.\n");
     }
@@ -146,7 +155,9 @@ void hgl_chan_destroy(HglChan *c)
     pthread_mutex_destroy(&c->mutex);
     pthread_cond_destroy(&c->cvar_writable);
     pthread_cond_destroy(&c->cvar_readable);
+#ifndef _WIN32
     close(c->efd);
+#endif
 }
 
 void hgl_chan_send(HglChan *c, void *item)
@@ -157,12 +168,14 @@ void hgl_chan_send(HglChan *c, void *item)
     }
     c->item = item;
     c->readable = true;
+#ifndef _WIN32
     uint64_t efd_inc = 1;
     ssize_t n_bytes_written = write(c->efd, &efd_inc, sizeof(uint64_t)); // increment counter
     if (n_bytes_written != sizeof(uint64_t)) {
         fprintf(stderr, "[hgl_chan.h]: Aborted <%s, %d>\n", __FILE__, __LINE__);
         abort(); // Temporary, TODO handle this properly
     }
+#endif
     pthread_cond_signal(&c->cvar_readable);
     pthread_mutex_unlock(&c->mutex);
 }
@@ -176,12 +189,14 @@ int hgl_chan_try_send(HglChan *c, void *item)
     }
     c->item = item;
     c->readable = true;
+#ifndef _WIN32
     uint64_t efd_inc = 1;
     ssize_t n_bytes_written = write(c->efd, &efd_inc, sizeof(uint64_t)); // increment counter
     if (n_bytes_written != sizeof(uint64_t)) {
         fprintf(stderr, "[hgl_chan.h]: Aborted <%s, %d>\n", __FILE__, __LINE__);
         abort(); // Temporary, TODO handle this properly
     }
+#endif
     pthread_cond_signal(&c->cvar_readable);
     pthread_mutex_unlock(&c->mutex);
     return 0;
@@ -195,8 +210,10 @@ void *hgl_chan_recv(HglChan *c)
     }
     void *item = c->item;
     c->readable = false;
+#ifndef _WIN32
     uint64_t efd_counter;
     read(c->efd, &efd_counter, sizeof(uint64_t)); // resets counter to zero
+#endif
     pthread_cond_signal(&c->cvar_writable);
     pthread_mutex_unlock(&c->mutex);
     return item;
@@ -211,13 +228,16 @@ void *hgl_chan_try_recv(HglChan *c)
     }
     void *item = c->item;
     c->readable = false;
+#ifndef _WIN32
     uint64_t efd_counter;
     read(c->efd, &efd_counter, sizeof(uint64_t)); // resets counter to zero
+#endif
     pthread_cond_signal(&c->cvar_writable);
     pthread_mutex_unlock(&c->mutex);
     return item;
 }
 
+#ifndef _WIN32
 HglChan *hgl_chan_select(int n_args, ...)
 {
     HglChan *ret = NULL;
@@ -256,7 +276,9 @@ HglChan *hgl_chan_select(int n_args, ...)
     va_end(args2);
     return ret;
 }
+#endif
 
+#ifndef _WIN32
 HglChan *hgl_chan_try_select(int n_args, ...)
 {
     HglChan *ret = NULL;
@@ -276,6 +298,7 @@ HglChan *hgl_chan_try_select(int n_args, ...)
     va_end(args);
     return ret;
 }
+#endif
 
 #endif
 

@@ -16,12 +16,11 @@ SimulationParameters io_read_params_ini(const char *filepath);
 /*
  * Parses command line arguments.
  */
-int io_parse_args(int argc,
-                  char *argv[],
-                  char *filepath,
-                  char *outputfilepath,
-                  SimulationParameters *params,
-                  bool *ascii_encoding);
+//int io_parse_args(int argc, char *argv[],
+//                  char *filepath,
+//                  char *outputfilepath,
+//                  SimulationParameters *params,
+//                  bool *ascii_encoding);
 
 /*
  * Loads *.pgm into image `img`. `img` contains an internal buffer which is
