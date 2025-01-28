@@ -9,6 +9,11 @@
 #include "params.h"
 
 /*
+ * Reads a parameter *.ini file.
+ */
+SimulationParameters io_read_params_ini(const char *filepath);
+
+/*
  * Parses command line arguments.
  */
 int io_parse_args(int argc,
@@ -22,11 +27,11 @@ int io_parse_args(int argc,
  * Loads *.pgm into image `img`. `img` contains an internal buffer which is
  * dynamically allocated in load_pgm and should be free'd after use.
  */
-int io_load_pgm(const char *filepath, Image *img);
+int io_load_pgm(const char *filepath, ErodrImage *img);
 
 /*
  * Saves image `img` to a *.pgm file.
  */
-int io_save_pgm(const char *filepath, Image *img, bool ascii_encoding);
+int io_save_pgm(const char *filepath, ErodrImage *img, bool ascii_encoding);
 
 #endif

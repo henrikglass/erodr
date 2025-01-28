@@ -318,7 +318,7 @@ HglIni *hgl_ini_parse(const char *filepath)
         goto out_error;
     }
 #else
-    fp = fopen(filepath, "rb");
+    fp = fopen(filepath, "rb+");
     if (fp == NULL) {
         fprintf(stderr, "[hgl_ini_parse] Error: errno=%s\n", strerror(errno));
         goto out_error;

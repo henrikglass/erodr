@@ -7,7 +7,6 @@
 #include "hgl_ini.h"
 
 #include "io.h"
-#include "util.h"
 #include <math.h>
 #include <stdio.h> 
 #include <stdint.h>
@@ -16,19 +15,50 @@
 #include <ctype.h>
 #include <string.h>
 
-#define GET_INI_PARAM_INT(ini, key)                                           \
-    do {                                                                      \
-        if (hgl_ini_has(ini, "SimulationParameters", #key)) {                 \
-            params->key = hgl_ini_get_f64(ini, "SimulationParameters", #key); \
-        }                                                                     \
+#define GET_INI_PARAM_INT(params, ini, key)                                    \
+    do {                                                                       \
+        if (hgl_ini_has(ini, "SimulationParameters", #key)) {                  \
+            (params).key = hgl_ini_get_f64(ini, "SimulationParameters", #key); \
+        }                                                                      \
     } while (0)
 
-#define GET_INI_PARAM_FLOAT(ini, key)                                         \
-    do {                                                                      \
-        if (hgl_ini_has(ini, "SimulationParameters", #key)) {                 \
-            params->key = hgl_ini_get_f64(ini, "SimulationParameters", #key); \
-        }                                                                     \
+#define GET_INI_PARAM_FLOAT(params, ini, key)                                  \
+    do {                                                                       \
+        if (hgl_ini_has(ini, "SimulationParameters", #key)) {                  \
+            (params).key = hgl_ini_get_f64(ini, "SimulationParameters", #key); \
+        }                                                                      \
     } while (0)
+
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+
+/*
+ * Reads a parameter *.ini file.
+ */
+SimulationParameters io_read_params_ini(const char *filepath)
+{
+    SimulationParameters parameters = DEFAULT_PARAM;
+
+    HglIni *params_ini = hgl_ini_parse(filepath);
+    if (params_ini == NULL) {
+        fprintf(stderr, "Error opening/parsing `%s`.\n", optarg);
+    }
+
+    GET_INI_PARAM_INT(parameters, params_ini, ttl);
+    GET_INI_PARAM_INT(parameters, params_ini, n);
+    GET_INI_PARAM_INT(parameters, params_ini, p_radius);
+    GET_INI_PARAM_FLOAT(parameters, params_ini, p_enertia);
+    GET_INI_PARAM_FLOAT(parameters, params_ini, p_capacity);
+    GET_INI_PARAM_FLOAT(parameters, params_ini, p_gravity);
+    GET_INI_PARAM_FLOAT(parameters, params_ini, p_evaporation);
+    GET_INI_PARAM_FLOAT(parameters, params_ini, p_erosion);
+    GET_INI_PARAM_FLOAT(parameters, params_ini, p_deposition);
+    GET_INI_PARAM_FLOAT(parameters, params_ini, p_min_slope);
+
+    hgl_ini_free(params_ini);
+
+    return parameters;
+}
+
 /*
  * Parses command line arguments.
  */
@@ -49,24 +79,25 @@ int io_parse_args(int argc,
 
             /* parameter *.ini filepath */
             case 'p': {
-                HglIni *params_ini = hgl_ini_parse(optarg);
-                if (params_ini == NULL) {
-                    fprintf(stderr, "Error opening/parsing `%s`.\n", optarg);
-                }
+                *params = io_read_params_ini(optarg);
+                //HglIni *params_ini = hgl_ini_parse(optarg);
+                //if (params_ini == NULL) {
+                //    fprintf(stderr, "Error opening/parsing `%s`.\n", optarg);
+                //}
 
-                //if (hgl_ini_has(params_ini, "SimulationParameters", "p_gravity")) { params->p_gravity = hgl_ini_get_u64(params_ini, "SimulationParameters", "p_gravity");}
-                GET_INI_PARAM_INT(params_ini, ttl);
-                GET_INI_PARAM_INT(params_ini, n);
-                GET_INI_PARAM_INT(params_ini, p_radius);
-                GET_INI_PARAM_FLOAT(params_ini, p_enertia);
-                GET_INI_PARAM_FLOAT(params_ini, p_capacity);
-                GET_INI_PARAM_FLOAT(params_ini, p_gravity);
-                GET_INI_PARAM_FLOAT(params_ini, p_evaporation);
-                GET_INI_PARAM_FLOAT(params_ini, p_erosion);
-                GET_INI_PARAM_FLOAT(params_ini, p_deposition);
-                GET_INI_PARAM_FLOAT(params_ini, p_min_slope);
+                ////if (hgl_ini_has(params_ini, "SimulationParameters", "p_gravity")) { params->p_gravity = hgl_ini_get_u64(params_ini, "SimulationParameters", "p_gravity");}
+                //GET_INI_PARAM_INT(params_ini, ttl);
+                //GET_INI_PARAM_INT(params_ini, n);
+                //GET_INI_PARAM_INT(params_ini, p_radius);
+                //GET_INI_PARAM_FLOAT(params_ini, p_enertia);
+                //GET_INI_PARAM_FLOAT(params_ini, p_capacity);
+                //GET_INI_PARAM_FLOAT(params_ini, p_gravity);
+                //GET_INI_PARAM_FLOAT(params_ini, p_evaporation);
+                //GET_INI_PARAM_FLOAT(params_ini, p_erosion);
+                //GET_INI_PARAM_FLOAT(params_ini, p_deposition);
+                //GET_INI_PARAM_FLOAT(params_ini, p_min_slope);
 
-                hgl_ini_free(params_ini);
+                //hgl_ini_free(params_ini);
             } break;
 
             /* output heightmap filepath */
@@ -122,7 +153,7 @@ int pgm_next_value(FILE *fp, char *buffer, size_t size)
             }
 
             // null terminate
-            buffer[min(size - 1, i)] = '\0';
+            buffer[MIN(size - 1, i)] = '\0';
             return i;
         }
     }
@@ -134,7 +165,7 @@ int pgm_next_value(FILE *fp, char *buffer, size_t size)
  * Loads *.pgm into image `img`. `img` contains an internal buffer which is
  * dynamically allocated in load_pgm and should be free'd after use.
  */
-int io_load_pgm(const char *filepath, Image *img) {
+int io_load_pgm(const char *filepath, ErodrImage *img) {
     FILE    *fp = fopen(filepath, "rb");
     char    *line = NULL;
     char    magic[16];
@@ -196,7 +227,7 @@ static inline uint16_t bswap16(uint16_t v)
 /*
  * Saves image `img` to a *.pgm file.
  */
-int io_save_pgm(const char *filepath, Image *img, bool ascii_encoding)
+int io_save_pgm(const char *filepath, ErodrImage *img, bool ascii_encoding)
 {
     FILE *fp = fopen(filepath, "wb");
 
