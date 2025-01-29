@@ -19,6 +19,8 @@
 
 #define LOW_RES_PREVIEW_MESH_SIZE 256
 
+#include "shaders/shaders.h"
+
 static float mesh_data[LOW_RES_PREVIEW_MESH_SIZE][LOW_RES_PREVIEW_MESH_SIZE][3];
 
 static float sample_hmap(ErodrImage *hmap, float xf, float yf)
@@ -64,7 +66,8 @@ void *ui_run(void *args)
     printf("%d\n", hmap_mesh.vertexCount);
     Matrix    hmap_tform    = MatrixTranslate(0.0f, 0.10f, 0.0f);
     Material  hmap_material = LoadMaterialDefault();
-    hmap_material.shader    = LoadShader(0, "src/shaders/hmap_shader.frag");
+    //hmap_material.shader    = LoadShader(0, "src/shaders/hmap_shader.frag");
+    hmap_material.shader    = LoadShaderFromMemory(NULL, SHADERS_HMAP_FRAG_SRC);
 
     Image hmap_image = (Image) {
         .data = hmap->data,
@@ -109,8 +112,13 @@ void *ui_run(void *args)
         }
 
         /* reload simulation parameters */
-        if (IsKeyPressed(KEY_S)) {
+        if (IsKeyPressed(KEY_E)) {
             hgl_chan_send(c, (void *)CMD_RELOAD_SIMPARAMS);
+        }
+
+        /* save image */
+        if (IsKeyPressed(KEY_S)) {
+            hgl_chan_send(c, (void *)CMD_SAVE_HMAP);
         }
 
         /* handle closing */
@@ -191,13 +199,14 @@ void *ui_run(void *args)
             EndMode3D();
             DrawFPS(screen_width - 100, 10);
             DrawText("Commands: ", 10, 10, 38, BLACK);
-            DrawText(TextFormat("g - change gain (visualization only) (%2.2f)", gain), 10, 50, 30, BLACK);
-            DrawText(TextFormat("r - reset heightmap"), 10, 80, 30, BLACK);
-            DrawText(TextFormat("s - reload simulation parameters from file"), 10, 110, 30, BLACK);
-            DrawText(TextFormat("p - projection mode (%s)", (camera.projection == CAMERA_PERSPECTIVE) ? 
+            DrawText(TextFormat("G - change gain (visualization only) (%2.2f)", gain), 10, 50, 30, BLACK);
+            DrawText(TextFormat("R - reset heightmap"), 10, 80, 30, BLACK);
+            DrawText(TextFormat("E - reload simulation parameters from file"), 10, 110, 30, BLACK);
+            DrawText(TextFormat("P - projection mode (%s)", (camera.projection == CAMERA_PERSPECTIVE) ? 
                                 "perspective" : "orthographic"), 10, 140, 30, BLACK);
             DrawText(TextFormat("Enter - run erosion simulation"), 10, 170, 30, BLACK);
-            DrawText(TextFormat("Esc/q - exit"), 10, 200, 30, BLACK);
+            DrawText(TextFormat("S - Save image"), 10, 200, 30, BLACK);
+            DrawText(TextFormat("Esc/Q - exit"), 10, 230, 30, BLACK);
 
             const int ypos = screen_height - 350;
             DrawText("Simulation Parameters: ", 10, screen_height - 350, 38, BLACK);

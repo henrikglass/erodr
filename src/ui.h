@@ -10,6 +10,7 @@ typedef enum
     CMD_RERUN_SIMULATION,
     CMD_RELOAD_SIMPARAMS,
     CMD_RESET_HMAP,
+    CMD_SAVE_HMAP,
     CMD_EXIT,
 } UiCommand;
 
