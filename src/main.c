@@ -44,8 +44,8 @@ Args parse_args(int argc, char *argv[])
     double *opt_erosion     = hgl_flags_add_f64("-s,--erosion-coefficient", "Particle erosion coefficient", DEFAULT_PARAM_EROSION, 0);
     double *opt_deposition  = hgl_flags_add_f64("-d,--deposition-coefficient", "Particle deposition coefficient", DEFAULT_PARAM_DEPOSITION, 0);
     double *opt_min_slope   = hgl_flags_add_f64("-m,--minimum-slope", "Minimum slope", DEFAULT_PARAM_MIN_SLOPE, 0);
+    bool *opt_no_ui         = hgl_flags_add_bool("--no-ui", "Don't open the UI/Visualizer (just perform the simulation and save like older versions of erodr did)", false, 0);
     bool *opt_help          = hgl_flags_add_bool("--help", "Show this message", false, 0);
-    bool *opt_no_ui         = hgl_flags_add_bool("--no-ui", "Don't show the UI (just performs the simulation like older versions of erodr did)", false, 0);
 
     int err = hgl_flags_parse(argc, argv);
     if (err != 0 || *opt_help) {
