@@ -15,6 +15,13 @@
 #include <stdlib.h>
 #include <pthread.h>
 
+#define EXIT_WITH_USAGE(code)               \
+    do {                                    \
+        printf("Usage: erodr [Options]\n"); \
+        hgl_flags_print();                  \
+        exit((code));                       \
+    } while (0)
+
 typedef struct
 {
     const char *input_filepath; 
@@ -50,9 +57,7 @@ Args parse_args(int argc, char *argv[])
 
     int err = hgl_flags_parse(argc, argv);
     if (err != 0 || *opt_help) {
-        printf("Usage: %s [Options]\n", argv[0]);
-        hgl_flags_print();
-        exit(1);
+        EXIT_WITH_USAGE(1);
     }
 
     if (*opt_gen_cmpl_cmd) {
@@ -62,9 +67,7 @@ Args parse_args(int argc, char *argv[])
 
     if (*opt_input_filepath == NULL) {
         printf("You must specify an input heightmap file with the `-i` or `--input` option.\n");
-        printf("Usage: %s [Options]\n", argv[0]);
-        hgl_flags_print();
-        exit(0);
+        EXIT_WITH_USAGE(0);
     }
 
     args.input_filepath      = *opt_input_filepath;
@@ -100,10 +103,9 @@ int main(int argc, char *argv[])
 
     /* load pgm heightmap & make a copy of it*/
     ErodrImage hmap;
-    if(io_load_pgm(args.input_filepath, &hmap)) {
-        printf("Usage: %s [Options]\n", argv[0]);
-        hgl_flags_print();
-        exit(1);
+    if(0 != io_load_pgm(args.input_filepath, &hmap)) {
+        printf("Error: could not load `%s`.\n", args.input_filepath);
+        EXIT_WITH_USAGE(1);
     }
     ErodrImage hmap_original = image_alloc(hmap.width, hmap.height);
     image_copy(&hmap_original, &hmap);

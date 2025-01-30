@@ -1,6 +1,6 @@
 #undef _GNU_SOURCE // gets rid of vim warning
 #define _GNU_SOURCE
-#define PRECISION_8 255
+#define PRECISION_8    255
 #define PRECISION_16 65535
 
 #define HGL_INI_IMPLEMENTATION
@@ -61,77 +61,6 @@ out:
 }
 
 /*
- * Parses command line arguments.
- */
-//int io_parse_args(int argc,
-//                  char *argv[],
-//                  char *filepath,
-//                  char *outputfilepath,
-//                  SimulationParameters *params,
-//                  bool *ascii_encoding) 
-//{
-//    int c;
-//    while((c = getopt(argc, argv, "af:o:p:n:t:r:e:c:g:v:s:d:m:")) != -1){
-//        switch(c){
-//            /* input heightmap filepath */
-//            case 'f': {
-//                strncpy(filepath, optarg, IO_FILEPATH_MAXLEN);
-//            } break;
-//
-//            /* parameter *.ini filepath */
-//            case 'p': {
-//                *params = io_read_params_ini(optarg);
-//                //HglIni *params_ini = hgl_ini_parse(optarg);
-//                //if (params_ini == NULL) {
-//                //    fprintf(stderr, "Error opening/parsing `%s`.\n", optarg);
-//                //}
-//
-//                ////if (hgl_ini_has(params_ini, "SimulationParameters", "p_gravity")) { params->p_gravity = hgl_ini_get_u64(params_ini, "SimulationParameters", "p_gravity");}
-//                //GET_INI_PARAM_INT(params_ini, ttl);
-//                //GET_INI_PARAM_INT(params_ini, n);
-//                //GET_INI_PARAM_INT(params_ini, p_radius);
-//                //GET_INI_PARAM_FLOAT(params_ini, p_inertia);
-//                //GET_INI_PARAM_FLOAT(params_ini, p_capacity);
-//                //GET_INI_PARAM_FLOAT(params_ini, p_gravity);
-//                //GET_INI_PARAM_FLOAT(params_ini, p_evaporation);
-//                //GET_INI_PARAM_FLOAT(params_ini, p_erosion);
-//                //GET_INI_PARAM_FLOAT(params_ini, p_deposition);
-//                //GET_INI_PARAM_FLOAT(params_ini, p_min_slope);
-//
-//                //hgl_ini_free(params_ini);
-//            } break;
-//
-//            /* output heightmap filepath */
-//            case 'o': {
-//                strncpy(outputfilepath, optarg, IO_FILEPATH_MAXLEN);
-//            } break;
-//
-//            /* use ascii encoding for the output *.pgm file */
-//            case 'a': {
-//                *ascii_encoding = true;
-//            } break;
-//
-//            /* parameter overrides */
-//            case 't': params->ttl = atoi(optarg); break;
-//            case 'n': params->n = atoi(optarg); break;
-//            case 'r': params->p_radius = atoi(optarg); break;
-//            case 'e': params->p_inertia = atof(optarg); break;
-//            case 'c': params->p_capacity = atof(optarg); break;
-//            case 'g': params->p_gravity = atof(optarg); break;
-//            case 'v': params->p_evaporation = atof(optarg); break;
-//            case 's': params->p_erosion = atof(optarg); break;
-//            case 'd': params->p_deposition = atof(optarg); break;
-//            case 'm': params->p_min_slope = atof(optarg); break;
-//            default:
-//                fprintf(stderr, "Usage: %s\n", argv[0]);
-//                return 1;
-//        }   
-//    }
-//
-//    return 0;
-//}
-
-/*
  * gets next value from *.pgm file.
  */
 int pgm_next_value(FILE *fp, char *buffer, size_t size)
@@ -140,20 +69,20 @@ int pgm_next_value(FILE *fp, char *buffer, size_t size)
     size_t i = 1;
 
     while(c != EOF){
-        // skip spaces
+        /* skip spaces */
         while((c = fgetc(fp)) != EOF && isspace(c));
 
-        // skip commented lines 
+        /* skip commented lines */
         if(c == '#'){
             while(c != '\r' && c != '\n' && (c = fgetc(fp)) != EOF);
         } else if (c != EOF){
-            // read values to buffer
+            /* read values to buffer */
             buffer[0] = c;
             for(; i < size && (c = fgetc(fp)) != EOF && !isspace(c); i++) {
                 buffer[i] = c;  
             }
 
-            // null terminate
+            /* null terminate */
             buffer[MIN(size - 1, i)] = '\0';
             return i;
         }
@@ -174,9 +103,9 @@ int io_load_pgm(const char *filepath, ErodrImage *img) {
     int     precision;
 
     if(fp == NULL)
-        return 1;
+        return -1;
 
-    // read header
+    /* read header */
     if(pgm_next_value(fp, value_buffer, 16) == EOF) return 1;
     strncpy(magic, value_buffer, 16);
     if(pgm_next_value(fp, value_buffer, 16) == EOF) return 1;
@@ -191,18 +120,18 @@ int io_load_pgm(const char *filepath, ErodrImage *img) {
         exit(1);
     }
 
-    // Allocate buffer for pixel values
+    /* Allocate buffer for pixel values */
     img->data = malloc(sizeof(float) * (img->height) * (img->width));
     float *data = (float *) img->data;
-    if(data == NULL)
-        return 1;
+    if(data == NULL) {
+        return -1;
+    }
 
-    // Read pixel values to data. 
-    // If magic is "P2" then values are ASCII encoded. 
-    // If magic is "P5" then values are binary encoded. 
+    /* Read pixel values to data. */
     if(strncmp(magic, "P2", 2) == 0){
-        for(int i = 0; pgm_next_value(fp, value_buffer, 16) != EOF; i++)
+        for(int i = 0; pgm_next_value(fp, value_buffer, 16) != EOF; i++) {
             data[i] = atof(value_buffer) / precision;
+        }
     } else if(strncmp(magic, "P5", 2) == 0) {
         int byte_depth = precision <= PRECISION_8 ? 1 : 2; 
         char tmp[byte_depth];
@@ -215,10 +144,11 @@ int io_load_pgm(const char *filepath, ErodrImage *img) {
         }
     }
 
-    // cleanup
+    /* cleanup */
     fclose(fp);
-    if(line)
+    if(line) {
         free(line);
+    }
 
     return 0;
 }
@@ -237,13 +167,13 @@ int io_save_pgm(const char *filepath, ErodrImage *img, bool ascii_encoding)
 {
     FILE *fp = fopen(filepath, "wb");
 
-    // write "header"
+    /* write header */
     fputs((ascii_encoding) ? "P2\n" : "P5\n", fp);  
     fputs("# Generated by erodr\n", fp);
     fprintf(fp, "%d %d\n", img->width, img->height);    
     fprintf(fp, "%d\n", PRECISION_16);  
     
-    // write data.
+    /* write data. */
     float *data = (float *)img->data;
     if (ascii_encoding) {   
         for(int i = 0; i < img->width * img->height; i++) {
@@ -254,7 +184,7 @@ int io_save_pgm(const char *filepath, ErodrImage *img, bool ascii_encoding)
         for (int y = 0; y < img->height; y++) {
             for (int x = 0; x < img->width; x++) {
 #ifdef _WIN32
-                // better hope you're not running windows on a BE machine...
+                /* better hope you're not running windows on a BE machine... */
                 uint16_t r = bswap16((uint16_t)(image_data32f[y*img->width + x] * PRECISION_16));
 #else
                 uint16_t r = htobe16((uint16_t)(image_data32f[y*img->width + x] * PRECISION_16));

@@ -13,11 +13,15 @@
 #include <assert.h>
 #include <stdio.h>
 
-#define PAN_INERTIA 0.9f
-#define ZOOM_INERTIA 0.7f
-#define ZOOM_DEFAULT 100.0f
-#define PLANE_SIZE 64.0f
-#define MESH_SIZE 256
+/* Yes, intertia is frame rate-dependent. Idc lol. */
+#define PAN_INERTIA        0.9f
+#define ZOOM_INERTIA       0.7f
+#define FOV_Y             45.0f
+#define ZOOM_DEFAULT     100.0f
+#define PLANE_SIZE        64.0f
+#define MESH_RES         256
+#define SCREEN_WIDTH    1600
+#define SCREEN_HEIGHT    900
 
 static float sample_hmap(ErodrImage *hmap, float xf, float yf)
 {
@@ -57,22 +61,22 @@ void *ui_run(void *args)
     HglChan *c = ui_args->chan;
 
     /* Window */
-    int screen_width  = 1600;
-    int screen_height =  900;
-    SetTargetFPS(60);
+    int screen_width  = SCREEN_WIDTH;
+    int screen_height = SCREEN_HEIGHT;
     SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
-    InitWindow(screen_width, screen_height, "erodr UI");
+    InitWindow(screen_width, screen_height, "Erodr UI");
 
     /* Camera */
-    Camera camera     = { 0 };
-    camera.position   = Vector3Scale(Vector3Normalize((Vector3){ 18.0f, 21.0f, 18.0f }), ZOOM_DEFAULT);
-    camera.target     = (Vector3){ 0.0f, 0.0f, 0.0f };    // Camera looking at point
-    camera.up         = (Vector3){ 0.0f, 1.0f, 0.0f };    // Camera up vector (rotation towards target)
-    camera.fovy       = 45.0f;                            // Camera field-of-view Y
-    camera.projection = CAMERA_PERSPECTIVE;               // Camera projection type
+    Camera camera = {
+        .position   = Vector3Scale(Vector3Normalize((Vector3){ 18.0f, 21.0f, 18.0f }), ZOOM_DEFAULT),
+        .target     = (Vector3){ 0.0f, 0.0f, 0.0f },
+        .up         = (Vector3){ 0.0f, 1.0f, 0.0f },
+        .fovy       = FOV_Y,
+        .projection = CAMERA_PERSPECTIVE,
+    };
 
     /* Heightmap mesh */
-    Mesh hmap_mesh = GenMeshPlane(64.0f, 64.0f, MESH_SIZE - 1, MESH_SIZE - 1);
+    Mesh hmap_mesh = GenMeshPlane(PLANE_SIZE, PLANE_SIZE, MESH_RES - 1, MESH_RES - 1);
     assert(hmap_mesh.vertexCount <= 0x10000); // Raylib only supports short int indicies.. :/
 
     /* Heightmap tform */
@@ -129,7 +133,7 @@ void *ui_run(void *args)
         
         /* view mode */
         if (IsKeyPressed(KEY_V)) {
-            view_mode = (view_mode + 1) % 7;
+            view_mode = (view_mode + 1) % 8;
             SetShaderValue(hmap_material.shader, shader_view_mode_loc, &view_mode, SHADER_UNIFORM_INT);
         } 
 
@@ -141,7 +145,7 @@ void *ui_run(void *args)
         }
 
         /* re-run simulation */
-        if (IsKeyPressed(KEY_ENTER)) {
+        if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
             hgl_chan_send(c, (void *)CMD_RERUN_SIMULATION);
         }
 
@@ -197,14 +201,14 @@ void *ui_run(void *args)
         zoom *= ZOOM_INERTIA;
 
         /* update mesh & texture */
-        for (int y = 0; y < MESH_SIZE; y++) {
-            for (int x = 0; x < MESH_SIZE; x++) {
-                float xf = (float)x / (float)MESH_SIZE;
-                float yf = (float)y / (float)MESH_SIZE;
-                hmap_mesh.vertices[y*MESH_SIZE*3 + x*3 + 1] = gain * sample_hmap(hmap, xf, yf);
+        for (int y = 0; y < MESH_RES; y++) {
+            for (int x = 0; x < MESH_RES; x++) {
+                float xf = (float)x / (float)MESH_RES;
+                float yf = (float)y / (float)MESH_RES;
+                hmap_mesh.vertices[y*MESH_RES*3 + x*3 + 1] = gain * sample_hmap(hmap, xf, yf);
             }
         }
-        UpdateMeshBuffer(hmap_mesh, 0, hmap_mesh.vertices, MESH_SIZE*MESH_SIZE*3*sizeof(float), 0);
+        UpdateMeshBuffer(hmap_mesh, 0, hmap_mesh.vertices, MESH_RES*MESH_RES*3*sizeof(float), 0);
         UpdateTexture(hmap_texture, hmap->data);
 
         /* ====== draw ================================== */
@@ -226,7 +230,7 @@ void *ui_run(void *args)
             DrawText(TextFormat("P - projection mode (%s)", (camera.projection == CAMERA_PERSPECTIVE) ? 
                                 "perspective" : "orthographic"), 10, 170, 30, BLACK);
             DrawText(TextFormat("V - Cycle between view modes (%d)", view_mode + 1), 10, 200, 30, BLACK);
-            DrawText(TextFormat("Enter - run erosion simulation"), 10, 230, 30, BLACK);
+            DrawText(TextFormat("Enter/Space - run erosion simulation"), 10, 230, 30, BLACK);
             DrawText(TextFormat("S - Save image"), 10, 260, 30, BLACK);
             DrawText(TextFormat("Esc/Q - exit"), 10, 290, 30, BLACK);
 

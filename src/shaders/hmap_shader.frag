@@ -40,6 +40,11 @@ void main()
         float g = cos(2*PI * (0.667 + v));
         float b = cos(2*PI * (2*0.667 + v));
         finalColor = vec4(r*r, g*g, b*b, 1.0);
+    } else if (view_mode == 7){
+        float r = cos(4*PI * (v));
+        float g = cos(4*PI * (0.667 + v));
+        float b = cos(4*PI * (2*0.667 + v));
+        finalColor = vec4(r*r, g*g, b*b, 1.0);
     } else {
         finalColor = vec4(1.0, 0.0, 1.0, 1.0);
     }

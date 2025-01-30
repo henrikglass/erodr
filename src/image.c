@@ -31,8 +31,9 @@ bool image_clamp(ErodrImage *img)
     float *data = (float *)img->data;
     for (int i = 0; i < size; i++) {
         float value = data[i];
-        if (value > 0.0f && value < 1.0f)
+        if (value > 0.0f && value < 1.0f) {
             continue;
+        }
         value = (value < 0.0f) ? 0.0f : value;
         value = (value > 1.0f) ? 1.0f : value;
         data[i] = value;
