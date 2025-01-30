@@ -63,17 +63,19 @@ Args parse_args(int argc, char *argv[])
     if (args.params_filepath != NULL) {
         args.sim_params = io_read_params_ini(args.params_filepath);
     } else {
-        args.sim_params.n             = (int) *opt_n;
-        args.sim_params.ttl           = (int) *opt_ttl;
-        args.sim_params.p_radius      = (int) *opt_radius;
-        args.sim_params.p_inertia     = (float) *opt_inertia;
-        args.sim_params.p_capacity    = (float) *opt_capacity;
-        args.sim_params.p_gravity     = (float) *opt_gravity;
-        args.sim_params.p_evaporation = (float) *opt_evaporation;
-        args.sim_params.p_erosion     = (float) *opt_erosion;
-        args.sim_params.p_deposition  = (float) *opt_deposition;
-        args.sim_params.p_min_slope   = (float) *opt_min_slope;
+        args.sim_params = DEFAULT_PARAM;
     }
+
+    if (hgl_flags_occured_before(opt_params_filepath, opt_n)) args.sim_params.n = (int) *opt_n;
+    if (hgl_flags_occured_before(opt_params_filepath, opt_ttl)) args.sim_params.ttl = (int) *opt_ttl;
+    if (hgl_flags_occured_before(opt_params_filepath, opt_radius)) args.sim_params.p_radius = (int) *opt_radius;
+    if (hgl_flags_occured_before(opt_params_filepath, opt_inertia)) args.sim_params.p_inertia = (float) *opt_inertia;
+    if (hgl_flags_occured_before(opt_params_filepath, opt_capacity)) args.sim_params.p_inertia = (float) *opt_capacity;
+    if (hgl_flags_occured_before(opt_params_filepath, opt_gravity)) args.sim_params.p_inertia = (float) *opt_gravity;
+    if (hgl_flags_occured_before(opt_params_filepath, opt_evaporation)) args.sim_params.p_inertia = (float) *opt_evaporation;
+    if (hgl_flags_occured_before(opt_params_filepath, opt_erosion)) args.sim_params.p_inertia = (float) *opt_erosion;
+    if (hgl_flags_occured_before(opt_params_filepath, opt_deposition)) args.sim_params.p_inertia = (float) *opt_deposition;
+    if (hgl_flags_occured_before(opt_params_filepath, opt_min_slope)) args.sim_params.p_inertia = (float) *opt_min_slope;
 
     return args;
 }

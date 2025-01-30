@@ -131,7 +131,8 @@ typedef struct
     HglFlagValue range_min;
     HglFlagValue range_max;
     uint32_t opts;
-    uint32_t status;
+    uint16_t status;
+    int16_t parse_order;
 } HglFlag;
 
 /**
@@ -188,6 +189,20 @@ int hgl_flags_parse(int argc, char *argv[]);
 void hgl_flags_print(void);
 
 /**
+ * Returns `true` if `opt_value` was parsed from the arguments. Conversely, returns
+ * `false` if it simply inherited the default value.
+ */
+bool hgl_flags_occured_in_args(void *opt_value);
+
+/**
+ * Returns `true` if `opt_a` was parsed before `opt_b` from the arguments. If either
+ * option retained it's default value (i.e. it was not parse from the arguments) then
+ * it's treated as occuring "first". If both options retained their default values
+ * then reconsider calling this function.
+ */
+bool hgl_flags_occured_before(void *opt_a, void *opt_b);
+
+/**
  * Generates a completion cmd for the `completion` command line utility on
  * the given stream.
  */
@@ -201,6 +216,7 @@ void hgl_flags_generate_completion_cmd(FILE *stream, const char *program_name);
 #include <string.h>
 #include <limits.h>
 #include <float.h>
+#include <stddef.h>
 
 #define max(a, b) ((a) > (b)) ? (a) : (b)
 #define min(a, b) ((a) < (b)) ? (a) : (b)
@@ -444,8 +460,9 @@ int hgl_flags_parse(int argc, char *argv[])
                 } break;
             }
 
-            /* mark flag as parsed */
+            /* mark flag as parsed and assign a parse order number */
             flag->status |= HGL_FLAGS_STATUS_PARSED;
+            flag->parse_order = (int16_t) i; // let's hope no one wants to parse 64k options..
         }
 
         if (!match) {
@@ -519,7 +536,7 @@ void hgl_flags_print()
         uint32_t opts = hgl_flags_[i].opts;
         switch (kind) {
             case HGL_FLAGS_KIND_BOOL: {
-                printf("  %-*s %s (default = %d)", HGL_FLAGS_PRINT_MARGIN, names, desc, defv.b); break;
+                printf("  %-*s %s (default = %d)", -HGL_FLAGS_PRINT_MARGIN, names, desc, defv.b); break;
             } break;
             case HGL_FLAGS_KIND_I64: {
                 printf("  %-*s %s (default = %ld, valid range = [%ld, %ld])",
@@ -546,6 +563,25 @@ void hgl_flags_print()
     }
 }
 
+bool hgl_flags_occured_in_args(void *opt)
+{
+    uint8_t *ptr8 = (uint8_t *) opt;
+    ptr8 -= offsetof(HglFlag, value);
+    HglFlag *flag = (HglFlag *) ptr8;
+
+    return ((flag->status & HGL_FLAGS_STATUS_PARSED) != 0);
+}
+
+bool hgl_flags_occured_before(void *opt_a, void *opt_b)
+{
+    uint8_t *ptr8_a = (uint8_t *) opt_a;
+    uint8_t *ptr8_b = (uint8_t *) opt_b;
+    ptr8_a -= offsetof(HglFlag, value);
+    ptr8_b -= offsetof(HglFlag, value);
+    HglFlag *flag_a = (HglFlag *) ptr8_a;
+    HglFlag *flag_b = (HglFlag *) ptr8_b;
+    return (flag_a->parse_order < flag_b->parse_order);
+}
 
 void hgl_flags_generate_completion_cmd(FILE *stream, const char *program_name)
 {
