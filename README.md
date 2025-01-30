@@ -1,5 +1,5 @@
 # Erodr
-Erodr is an implementation of Hans Theobald Beyer's algorithm for simulated hydraulic erosion of landscapes. The algorithm is described in detail in his his thesis *Implementation of a method for hydraulic erosion* which can be found [here](https://www.firespark.de/resources/downloads/implementation%20of%20a%20methode%20for%20hydraulic%20erosion.pdf). Below is the before & after of a 512x512 landscape eroded using Erodr.
+Erodr is an implementation of Hans Theobald Beyer's algorithm for simulated hydraulic erosion of landscapes. The algorithm is described in detail in his his thesis *Implementation of a method for hydraulic erosion* which can be found [here](https://ardordeosis.github.io/implementation-of-a-method-for-hydraulic-erosion/thesis-beyer.pdf). Below is the before & after of a 512x512 landscape eroded using Erodr.
 
 ![alt text](https://i.gyazo.com/c1b0deb140a5d156bddc0780979f32cd.png)
 
