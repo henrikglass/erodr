@@ -1,12 +1,13 @@
-
 #define HGL_FLAGS_IMPLEMENTATION
 #include "hgl_flags.h"
 
-#define HGL_CHAN_IMPLEMENTATION
 #include "erosion_sim.h"
 #include "ui.h"
 #include "io.h"
 #include "image.h"
+
+#define HGL_CHAN_IMPLEMENTATION
+#include "hgl_chan.h"
 
 
 #include <stdio.h>
@@ -30,7 +31,7 @@ Args parse_args(int argc, char *argv[])
     Args args = {0};
 
     /* input, output */
-    const char **opt_input_filepath  = hgl_flags_add_str("-i,--input", "path to input heightmap *.pgm file", NULL, HGL_FLAGS_OPT_MANDATORY);
+    const char **opt_input_filepath  = hgl_flags_add_str("-i,--input", "path to input heightmap *.pgm file", NULL, 0);
     const char **opt_output_filepath = hgl_flags_add_str("-o,--output", "path to output heightmap *.pgm file", "output.pgm", 0);
     const char **opt_params_filepath = hgl_flags_add_str("-p,--params", "path to simulation parameters *.ini file", NULL, 0);
     bool *opt_ascii_encode_output    = hgl_flags_add_bool("-a, --ascii", "Use ascii encoding for output *.pgm file.", false, 0);
@@ -46,12 +47,25 @@ Args parse_args(int argc, char *argv[])
     double *opt_min_slope   = hgl_flags_add_f64("-m,--minimum-slope", "Minimum slope", DEFAULT_PARAM_MIN_SLOPE, 0);
     bool *opt_no_ui         = hgl_flags_add_bool("--no-ui", "Don't open the UI/Visualizer (just perform the simulation and save like older versions of erodr did)", false, 0);
     bool *opt_help          = hgl_flags_add_bool("--help", "Show this message", false, 0);
+    bool *opt_gen_cmpl_cmd  = hgl_flags_add_bool("--generate-completion-cmd", "Generate a completion command for Erodr on stdout", false, 0);
 
     int err = hgl_flags_parse(argc, argv);
     if (err != 0 || *opt_help) {
         printf("Usage: %s [Options]\n", argv[0]);
         hgl_flags_print();
         exit(1);
+    }
+
+    if (*opt_gen_cmpl_cmd) {
+        hgl_flags_generate_completion_cmd(stdout, argv[0]);
+        exit(0);
+    }
+
+    if (*opt_input_filepath == NULL) {
+        printf("You must specify an input heightmap file with the `-i` or `--input` option.\n");
+        printf("Usage: %s [Options]\n", argv[0]);
+        hgl_flags_print();
+        exit(0);
     }
 
     args.input_filepath      = *opt_input_filepath;

@@ -589,7 +589,7 @@ void hgl_flags_generate_completion_cmd(FILE *stream, const char *program_name)
     for (size_t i = 0; i < hgl_n_flags_; i++) {
         const char *names = hgl_flags_[i].names;
         size_t offset = 0;
-        for (size_t j = 0;; i++) {
+        for (size_t j = 0;; j++) {
             if (names[j] == ',') {
                 fprintf(stream, "%.*s ", (int)(j - offset), names + offset);
                 offset = ++j;
@@ -602,6 +602,7 @@ void hgl_flags_generate_completion_cmd(FILE *stream, const char *program_name)
     }
     fprintf(stream, "\" %s", program_name);
     fprintf(stream, "\n");
+    fflush(stream);
 }
 
 #endif

@@ -49,6 +49,7 @@
  */
 
 #ifndef HGL_CHAN_H
+#define HGL_CHAN_H
 
 /*--- Include files ---------------------------------------------------------------------*/
 
@@ -120,7 +121,7 @@ HglChan *hgl_chan_select(int n_args, ...);
 HglChan *hgl_chan_try_select(int n_args, ...);
 #endif
 
-#endif
+#endif /* HGL_CHAN_H */
 
 #ifdef HGL_CHAN_IMPLEMENTATION
 
