@@ -1,14 +1,13 @@
-#define HGL_FLAGS_IMPLEMENTATION
-#include "hgl_flags.h"
-
 #include "erosion_sim.h"
 #include "ui.h"
 #include "io.h"
 #include "image.h"
 
+#define HGL_FLAGS_IMPLEMENTATION
+#include "hgl_flags.h"
+
 #define HGL_CHAN_IMPLEMENTATION
 #include "hgl_chan.h"
-
 
 #include <stdio.h>
 #include <stdbool.h>
