@@ -186,6 +186,11 @@ int io_load_pgm(const char *filepath, ErodrImage *img) {
     if(pgm_next_value(fp, value_buffer, 16) == EOF) return 1;
     precision = atoi(value_buffer);
 
+    if (img->width != img->height) {
+        printf("Erodr doesn't support non-square heightmaps.\n");
+        exit(1);
+    }
+
     // Allocate buffer for pixel values
     img->data = malloc(sizeof(float) * (img->height) * (img->width));
     float *data = (float *) img->data;
