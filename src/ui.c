@@ -20,8 +20,8 @@
 #define ZOOM_DEFAULT     100.0f
 #define PLANE_SIZE        64.0f
 #define MESH_RES         256
-#define SCREEN_WIDTH    1600
-#define SCREEN_HEIGHT    900
+#define SCREEN_WIDTH    1920
+#define SCREEN_HEIGHT   1080
 
 static float sample_hmap(ErodrImage *hmap, float xf, float yf)
 {
@@ -50,6 +50,13 @@ static float sample_hmap(ErodrImage *hmap, float xf, float yf)
     float bottom = (1.0f - t_x) * bottom_left + t_x * bottom_right;
     return ((1.0f - t_y) * top + t_y * bottom);
 #endif
+}
+
+static float clamp(float value, float min, float max)
+{
+	if (value < min) return min;
+	if (value > max) return max;
+    return value;
 }
 
 void *ui_run(void *args)
@@ -84,7 +91,6 @@ void *ui_run(void *args)
 
     /* Heightmap material */
     Material  hmap_material = LoadMaterialDefault();
-    hmap_material.shader    = LoadShaderFromMemory(NULL, SHADERS_HMAP_FRAG_SRC);
     Image hmap_image = (Image) {
         .data = hmap->data,
         .width = hmap->width,
@@ -94,23 +100,33 @@ void *ui_run(void *args)
     };
     Texture2D hmap_texture  = LoadTextureFromImage(hmap_image);
     SetTextureFilter(hmap_texture, TEXTURE_FILTER_TRILINEAR);
+    SetTextureWrap(hmap_texture, TEXTURE_WRAP_MIRROR_REPEAT);
     SetMaterialTexture(&hmap_material, MATERIAL_MAP_ALBEDO, hmap_texture);
-    int shader_view_mode_loc = GetShaderLocation(hmap_material.shader, "view_mode");
-    int shader_snow_thresh_loc = GetShaderLocation(hmap_material.shader, "snow_threshold");
-    int shader_gain_loc = GetShaderLocation(hmap_material.shader, "gain");
-    int shader_view_mode = 0;
-    float shader_snow_thresh = 0.002;
-    float shader_gain = 1.65;
-    SetShaderValue(hmap_material.shader, shader_view_mode_loc, &shader_view_mode, SHADER_UNIFORM_INT);
+
+    /* Heightmap material shader */
+    hmap_material.shader = LoadShaderFromMemory(NULL, SHADERS_HMAP_FRAG_SRC);
+    int shader_mode_loc         = GetShaderLocation(hmap_material.shader, "mode");
+    int shader_res_loc          = GetShaderLocation(hmap_material.shader, "res");
+    int shader_snow_thresh_loc  = GetShaderLocation(hmap_material.shader, "snow_threshold");
+    int shader_snow_pooling_loc = GetShaderLocation(hmap_material.shader, "snow_pooling");
+    int shader_brightness_loc   = GetShaderLocation(hmap_material.shader, "brightness");
+    int shader_mode           = 0;
+    float shader_res          = (float) hmap->width;
+    float shader_snow_thresh  = 0.002f;
+    float shader_snow_pooling = 3.000f;
+    float shader_brightness   = 1.39f;
+    SetShaderValue(hmap_material.shader, shader_mode_loc, &shader_mode, SHADER_UNIFORM_INT);
+    SetShaderValue(hmap_material.shader, shader_res_loc, &shader_res, SHADER_UNIFORM_FLOAT);
     SetShaderValue(hmap_material.shader, shader_snow_thresh_loc, &shader_snow_thresh, SHADER_UNIFORM_FLOAT);
-    SetShaderValue(hmap_material.shader, shader_gain_loc, &shader_gain, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(hmap_material.shader, shader_snow_pooling_loc, &shader_snow_pooling, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(hmap_material.shader, shader_brightness_loc, &shader_brightness, SHADER_UNIFORM_FLOAT);
 
     /* Camera controls */
     Vector2 mouse = Vector2Zero();
     float zoom = 0.0f;
     
     /* misc */
-    float gain = 16.0f;
+    float terrain_height = 16.0f;
     bool running = true;
 
     while (running) {
@@ -139,8 +155,8 @@ void *ui_run(void *args)
         
         /* view mode */
         if (IsKeyPressed(KEY_V)) {
-            shader_view_mode = (shader_view_mode + 1) % 8;
-            SetShaderValue(hmap_material.shader, shader_view_mode_loc, &shader_view_mode, SHADER_UNIFORM_INT);
+            shader_mode = (shader_mode + 1) % 4;
+            SetShaderValue(hmap_material.shader, shader_mode_loc, &shader_mode, SHADER_UNIFORM_INT);
         } 
 
         /* handle closing */
@@ -177,22 +193,24 @@ void *ui_run(void *args)
             }
         }
 
-        /* adjust camera target/position based on gain setting */
-        camera.target.y = hmap_tform.m13 + gain/4.0f;
+        /* adjust camera target/position based on terrain_height setting */
+        camera.target.y = hmap_tform.m13 + terrain_height/2.0f;
 
-        /* gain adjustment */
+        /* terrain_height adjustment */
         Vector2 mouse_delta = GetMouseDelta();
         if (IsMouseButtonDown(1)) {
-            gain -= 0.1f*mouse_delta.y;
+            terrain_height -= 0.1f*mouse_delta.y;
         }
 
         /* "snow" threshold adjustment */
         if (IsMouseButtonDown(2)) {
-            if (IsKeyDown(KEY_LEFT_CONTROL)) {
-                shader_gain -= 0.01f*mouse_delta.y;
-                SetShaderValue(hmap_material.shader, shader_gain_loc, &shader_gain, SHADER_UNIFORM_FLOAT);
+            if (IsKeyDown(KEY_LEFT_SHIFT)) {
+                shader_snow_pooling -= 0.01f*mouse_delta.y;
+                shader_snow_pooling = clamp(shader_snow_pooling, 1.0, 10.0);
+                SetShaderValue(hmap_material.shader, shader_snow_pooling_loc, &shader_snow_pooling, SHADER_UNIFORM_FLOAT);
             } else {
                 shader_snow_thresh -= 0.00001f*mouse_delta.y;
+                shader_snow_thresh = clamp(shader_snow_thresh, 0.0, 10.0);
                 SetShaderValue(hmap_material.shader, shader_snow_thresh_loc, &shader_snow_thresh, SHADER_UNIFORM_FLOAT);
             }
         }
@@ -222,7 +240,7 @@ void *ui_run(void *args)
             for (int x = 0; x < MESH_RES; x++) {
                 float xf = (float)x / (float)MESH_RES;
                 float yf = (float)y / (float)MESH_RES;
-                hmap_mesh.vertices[y*MESH_RES*3 + x*3 + 1] = gain * sample_hmap(hmap, xf, yf);
+                hmap_mesh.vertices[y*MESH_RES*3 + x*3 + 1] = terrain_height * sample_hmap(hmap, xf, yf);
             }
         }
         UpdateMeshBuffer(hmap_mesh, 0, hmap_mesh.vertices, MESH_RES*MESH_RES*3*sizeof(float), 0);
@@ -239,47 +257,52 @@ void *ui_run(void *args)
         
             /* Section "Commands" */
             DrawFPS(screen_width - 100, 10);
-            DrawText("Commands: ", 10, 10, 38, BLACK);
-            DrawText(TextFormat("Left mouse button/scroll wheel - move camera", gain), 10, 50, 30, BLACK);
-            DrawText(TextFormat("Right mouse button - change gain (visualization only) (%2.2f)", gain), 10, 80, 30, BLACK);
-            DrawText(TextFormat("R - reset heightmap"), 10, 110, 30, BLACK);
-            DrawText(TextFormat("E - reload simulation parameters from file"), 10, 140, 30, BLACK);
+            DrawText("Simulation Controls: ", 10, 10, 38, BLACK);
+            DrawText(TextFormat("R - reset heightmap"), 10, 50, 24, BLACK);
+            DrawText(TextFormat("E - reload simulation parameters from file"), 10, 80, 24, BLACK);
+            DrawText(TextFormat("Enter/Space - run erosion simulation"), 10, 110, 24, BLACK);
+            DrawText(TextFormat("S - Save image"), 10, 140, 24, BLACK);
+            DrawText(TextFormat("Esc/Q - exit"), 10, 170, 24, BLACK);
+
+            //int xpos = screen_width - 770;
+            DrawText("Visualization Controls:", 10, 250, 38, BLACK);
+            DrawText(TextFormat("V - Cycle between visualizer modes (%d)", shader_mode + 1), 10, 290, 24, BLACK);
             DrawText(TextFormat("P - projection mode (%s)", (camera.projection == CAMERA_PERSPECTIVE) ? 
-                                "perspective" : "orthographic"), 10, 170, 30, BLACK);
-            DrawText(TextFormat("V - Cycle between view modes (%d)", shader_view_mode + 1), 10, 200, 30, BLACK);
-            DrawText(TextFormat("Enter/Space - run erosion simulation"), 10, 230, 30, BLACK);
-            DrawText(TextFormat("S - Save image"), 10, 260, 30, BLACK);
-            DrawText(TextFormat("Esc/Q - exit"), 10, 290, 30, BLACK);
+                                "perspective" : "orthographic"), 10, 320, 24, BLACK);
+            DrawText(TextFormat("Left mouse button/scroll - move camera"), 10, 350, 24, BLACK);
+            DrawText(TextFormat("Middle mouse button - change snow cover (%2.5f)", shader_snow_thresh), 10, 380, 24, BLACK);
+            DrawText(TextFormat("Lshift + Middle mouse button - change snow pooling (%2.2f)", shader_snow_pooling), 10, 410, 24, BLACK);
+            DrawText(TextFormat("Right mouse button - change terrain height (%2.2f)", terrain_height), 10, 440, 24, BLACK);
 
             /* Section "Image Resolution" */
-            const int ypos = screen_height - 500;
+            int ypos = screen_height - 500;
             DrawText("Image Resolution:", 10, ypos, 38, BLACK);
-            DrawText(TextFormat("%dx%d (previewed as 256x256)", hmap->width, hmap->height), 10, ypos + 40, 30, BLACK);
+            DrawText(TextFormat("%dx%d (previewed as 256x256)", hmap->width, hmap->height), 10, ypos + 40, 24, BLACK);
 
             /* Section "Simulation Parameters" */
             DrawText("Simulation Parameters: ", 10, ypos + 100, 38, BLACK);
-            DrawText("# of particles", 10, ypos + 140, 30, BLACK); 
-            DrawText(TextFormat("= %d", sim_params->n), 300, ypos + 140, 30, BLACK);
-            DrawText("ttl          ", 10, ypos + 170, 30, BLACK); 
-            DrawText(TextFormat("= %d", sim_params->ttl), 300, ypos + 170, 30, BLACK);
-            DrawText("p_radius     ", 10, ypos + 200, 30, BLACK); 
-            DrawText(TextFormat("= %d", sim_params->p_radius), 300, ypos + 200, 30, BLACK);
-            DrawText("p_inertia    ", 10, ypos + 230, 30, BLACK); 
-            DrawText(TextFormat("= %f", sim_params->p_inertia), 300, ypos + 230, 30, BLACK);
-            DrawText("p_capacity   ", 10, ypos + 260, 30, BLACK); 
-            DrawText(TextFormat("= %f", sim_params->p_capacity), 300, ypos + 260, 30, BLACK);
-            DrawText("p_gravity    ", 10, ypos + 290, 30, BLACK); 
-            DrawText(TextFormat("= %f", sim_params->p_gravity), 300, ypos + 290, 30, BLACK);
-            DrawText("p_evaporation", 10, ypos + 320, 30, BLACK); 
-            DrawText(TextFormat("= %f", sim_params->p_evaporation), 300, ypos + 320, 30, BLACK);
-            DrawText("p_erosion    ", 10, ypos + 350, 30, BLACK); 
-            DrawText(TextFormat("= %f", sim_params->p_erosion), 300, ypos + 350, 30, BLACK);
-            DrawText("p_deposition ", 10, ypos + 380, 30, BLACK); 
-            DrawText(TextFormat("= %f", sim_params->p_deposition), 300, ypos + 380, 30, BLACK);
-            DrawText("p_min_slope  ", 10, ypos + 410, 30, BLACK); 
-            DrawText(TextFormat("= %f", sim_params->p_min_slope), 300, ypos + 410, 30, BLACK);
-            DrawText("p_initial_velocity  ", 10, ypos + 440, 30, BLACK); 
-            DrawText(TextFormat("= %f", sim_params->p_initial_velocity), 300, ypos + 440, 30, BLACK);
+            DrawText("# of particles", 10, ypos + 140, 24, BLACK); 
+            DrawText(TextFormat("= %d", sim_params->n), 300, ypos + 140, 24, BLACK);
+            DrawText("ttl          ", 10, ypos + 170, 24, BLACK); 
+            DrawText(TextFormat("= %d", sim_params->ttl), 300, ypos + 170, 24, BLACK);
+            DrawText("p_radius     ", 10, ypos + 200, 24, BLACK); 
+            DrawText(TextFormat("= %d", sim_params->p_radius), 300, ypos + 200, 24, BLACK);
+            DrawText("p_inertia    ", 10, ypos + 230, 24, BLACK); 
+            DrawText(TextFormat("= %f", sim_params->p_inertia), 300, ypos + 230, 24, BLACK);
+            DrawText("p_capacity   ", 10, ypos + 260, 24, BLACK); 
+            DrawText(TextFormat("= %f", sim_params->p_capacity), 300, ypos + 260, 24, BLACK);
+            DrawText("p_gravity    ", 10, ypos + 290, 24, BLACK); 
+            DrawText(TextFormat("= %f", sim_params->p_gravity), 300, ypos + 290, 24, BLACK);
+            DrawText("p_evaporation", 10, ypos + 320, 24, BLACK); 
+            DrawText(TextFormat("= %f", sim_params->p_evaporation), 300, ypos + 320, 24, BLACK);
+            DrawText("p_erosion    ", 10, ypos + 350, 24, BLACK); 
+            DrawText(TextFormat("= %f", sim_params->p_erosion), 300, ypos + 350, 24, BLACK);
+            DrawText("p_deposition ", 10, ypos + 380, 24, BLACK); 
+            DrawText(TextFormat("= %f", sim_params->p_deposition), 300, ypos + 380, 24, BLACK);
+            DrawText("p_min_slope  ", 10, ypos + 410, 24, BLACK); 
+            DrawText(TextFormat("= %f", sim_params->p_min_slope), 300, ypos + 410, 24, BLACK);
+            DrawText("p_initial_velocity  ", 10, ypos + 440, 24, BLACK); 
+            DrawText(TextFormat("= %f", sim_params->p_initial_velocity), 300, ypos + 440, 24, BLACK);
         EndDrawing();
     }
 
