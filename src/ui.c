@@ -114,7 +114,7 @@ void *ui_run(void *args)
     float shader_res          = (float) hmap->width;
     float shader_snow_thresh  = 0.002f;
     float shader_snow_pooling = 3.000f;
-    float shader_brightness   = 1.39f;
+    float shader_brightness   = 2.09f;
     SetShaderValue(hmap_material.shader, shader_mode_loc, &shader_mode, SHADER_UNIFORM_INT);
     SetShaderValue(hmap_material.shader, shader_res_loc, &shader_res, SHADER_UNIFORM_FLOAT);
     SetShaderValue(hmap_material.shader, shader_snow_thresh_loc, &shader_snow_thresh, SHADER_UNIFORM_FLOAT);

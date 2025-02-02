@@ -28,7 +28,8 @@ void main()
             float d2 = abs(s0 - s2);
             float slope = d1 + d2;
 
-            vec4 vv = brightness * vec4(0.4 + 0.6*v, 0.35 + 0.65*v, 0.3+0.7*v, 1.0f);
+            //vec4 vv = brightness * vec4(0.4 + 0.6*v, 0.35 + 0.65*v, 0.3+0.7*v, 1.0f);
+            vec4 vv = brightness * vec4(v, v, v, 1.0f);
             vv.w = 1.0;
             if (slope > snow_pooling*snow_threshold) {
                 finalColor = vec4(0.40,0.36,0.30,1.0) * vv;

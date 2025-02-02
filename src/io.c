@@ -41,7 +41,7 @@ SimulationParameters io_read_params_ini(const char *filepath)
     HglIni *params_ini = hgl_ini_parse(filepath);
     if (params_ini == NULL) {
         fprintf(stderr, "Error opening/parsing `%s`.\n", optarg);
-        goto out;
+        exit(1);
     }
 
     GET_INI_PARAM_INT(parameters, params_ini, ttl);
@@ -57,7 +57,6 @@ SimulationParameters io_read_params_ini(const char *filepath)
     GET_INI_PARAM_FLOAT(parameters, params_ini, p_initial_velocity);
     GET_INI_PARAM_FLOAT(parameters, params_ini, p_initial_water);
 
-out:
     hgl_ini_free(params_ini);
     return parameters;
 }
