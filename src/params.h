@@ -12,6 +12,7 @@
 #define DEFAULT_PARAM_DEPOSITION          0.3
 #define DEFAULT_PARAM_MIN_SLOPE           0.0001
 #define DEFAULT_PARAM_INITIAL_VELOCITY    0.9
+#define DEFAULT_PARAM_INITIAL_WATER       1.0
 
 #define DEFAULT_PARAM                                         \
     (SimulationParameters) {                                  \
@@ -26,6 +27,7 @@
         .p_deposition       = DEFAULT_PARAM_DEPOSITION,       \
         .p_min_slope        = DEFAULT_PARAM_MIN_SLOPE,        \
         .p_initial_velocity = DEFAULT_PARAM_INITIAL_VELOCITY, \
+        .p_initial_water    = DEFAULT_PARAM_INITIAL_WATER,    \
     }
 
 /*
@@ -43,6 +45,7 @@ typedef struct SimulationParameters {
     float p_deposition;
     float p_min_slope;
     float p_initial_velocity;
+    float p_initial_water;
 } SimulationParameters;
 
 #endif

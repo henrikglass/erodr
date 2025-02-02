@@ -54,6 +54,8 @@ SimulationParameters io_read_params_ini(const char *filepath)
     GET_INI_PARAM_FLOAT(parameters, params_ini, p_erosion);
     GET_INI_PARAM_FLOAT(parameters, params_ini, p_deposition);
     GET_INI_PARAM_FLOAT(parameters, params_ini, p_min_slope);
+    GET_INI_PARAM_FLOAT(parameters, params_ini, p_initial_velocity);
+    GET_INI_PARAM_FLOAT(parameters, params_ini, p_initial_water);
 
 out:
     hgl_ini_free(params_ini);

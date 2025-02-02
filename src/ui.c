@@ -275,7 +275,7 @@ void *ui_run(void *args)
             DrawText(TextFormat("Right mouse button - change terrain height (%2.2f)", terrain_height), 10, 440, 24, BLACK);
 
             /* Section "Image Resolution" */
-            int ypos = screen_height - 500;
+            int ypos = screen_height - 520;
             DrawText("Image Resolution:", 10, ypos, 38, BLACK);
             DrawText(TextFormat("%dx%d (previewed as 256x256)", hmap->width, hmap->height), 10, ypos + 40, 24, BLACK);
 
@@ -303,6 +303,8 @@ void *ui_run(void *args)
             DrawText(TextFormat("= %f", sim_params->p_min_slope), 300, ypos + 410, 24, BLACK);
             DrawText("p_initial_velocity  ", 10, ypos + 440, 24, BLACK); 
             DrawText(TextFormat("= %f", sim_params->p_initial_velocity), 300, ypos + 440, 24, BLACK);
+            DrawText("p_initial_water  ", 10, ypos + 470, 24, BLACK); 
+            DrawText(TextFormat("= %f", sim_params->p_initial_water), 300, ypos + 470, 24, BLACK);
         EndDrawing();
     }
 

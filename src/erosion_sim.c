@@ -160,7 +160,7 @@ void erosion_sim_run(ErodrImage *hmap, SimulationParameters *params) {
         p.dir = (Vec2){0, 0};
         p.vel = params->p_initial_velocity;
         p.sediment = 0;
-        p.water = 1;
+        p.water = params->p_initial_water;
 
         for(int j = 0; j < params->ttl; j++) {
             /* interpolate gradient g and height h_old at p's position. */
