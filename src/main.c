@@ -51,6 +51,7 @@ Args parse_args(int argc, char *argv[])
     double *opt_erosion     = hgl_flags_add_f64("-s,--erosion-coefficient", "Particle erosion coefficient", DEFAULT_PARAM_EROSION, 0);
     double *opt_deposition  = hgl_flags_add_f64("-d,--deposition-coefficient", "Particle deposition coefficient", DEFAULT_PARAM_DEPOSITION, 0);
     double *opt_min_slope   = hgl_flags_add_f64("-m,--minimum-slope", "Minimum slope", DEFAULT_PARAM_MIN_SLOPE, 0);
+    double *opt_initial_vel = hgl_flags_add_f64("-f,--initial-velocity", "Particle initial velocity", DEFAULT_PARAM_INITIAL_VELOCITY, 0);
     bool *opt_no_ui         = hgl_flags_add_bool("--no-ui", "Don't open the UI/Visualizer (just perform the simulation and save like older versions of erodr did)", false, 0);
     bool *opt_help          = hgl_flags_add_bool("--help", "Show this message", false, 0);
     bool *opt_gen_cmpl_cmd  = hgl_flags_add_bool("--generate-completion-cmd", "Generate a completion command for Erodr on stdout", false, 0);
@@ -86,12 +87,13 @@ Args parse_args(int argc, char *argv[])
     if (hgl_flags_occured_before(opt_params_filepath, opt_ttl)) args.sim_params.ttl = (int) *opt_ttl;
     if (hgl_flags_occured_before(opt_params_filepath, opt_radius)) args.sim_params.p_radius = (int) *opt_radius;
     if (hgl_flags_occured_before(opt_params_filepath, opt_inertia)) args.sim_params.p_inertia = (float) *opt_inertia;
-    if (hgl_flags_occured_before(opt_params_filepath, opt_capacity)) args.sim_params.p_inertia = (float) *opt_capacity;
-    if (hgl_flags_occured_before(opt_params_filepath, opt_gravity)) args.sim_params.p_inertia = (float) *opt_gravity;
-    if (hgl_flags_occured_before(opt_params_filepath, opt_evaporation)) args.sim_params.p_inertia = (float) *opt_evaporation;
-    if (hgl_flags_occured_before(opt_params_filepath, opt_erosion)) args.sim_params.p_inertia = (float) *opt_erosion;
-    if (hgl_flags_occured_before(opt_params_filepath, opt_deposition)) args.sim_params.p_inertia = (float) *opt_deposition;
-    if (hgl_flags_occured_before(opt_params_filepath, opt_min_slope)) args.sim_params.p_inertia = (float) *opt_min_slope;
+    if (hgl_flags_occured_before(opt_params_filepath, opt_capacity)) args.sim_params.p_capacity = (float) *opt_capacity;
+    if (hgl_flags_occured_before(opt_params_filepath, opt_gravity)) args.sim_params.p_gravity = (float) *opt_gravity;
+    if (hgl_flags_occured_before(opt_params_filepath, opt_evaporation)) args.sim_params.p_evaporation = (float) *opt_evaporation;
+    if (hgl_flags_occured_before(opt_params_filepath, opt_erosion)) args.sim_params.p_erosion = (float) *opt_erosion;
+    if (hgl_flags_occured_before(opt_params_filepath, opt_deposition)) args.sim_params.p_deposition = (float) *opt_deposition;
+    if (hgl_flags_occured_before(opt_params_filepath, opt_min_slope)) args.sim_params.p_min_slope = (float) *opt_min_slope;
+    if (hgl_flags_occured_before(opt_params_filepath, opt_initial_vel)) args.sim_params.p_initial_velocity = (float) *opt_initial_vel;
 
     return args;
 }

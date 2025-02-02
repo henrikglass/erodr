@@ -96,8 +96,14 @@ void *ui_run(void *args)
     SetTextureFilter(hmap_texture, TEXTURE_FILTER_TRILINEAR);
     SetMaterialTexture(&hmap_material, MATERIAL_MAP_ALBEDO, hmap_texture);
     int shader_view_mode_loc = GetShaderLocation(hmap_material.shader, "view_mode");
-    int view_mode = 0;
-    SetShaderValue(hmap_material.shader, shader_view_mode_loc, &view_mode, SHADER_UNIFORM_INT);
+    int shader_snow_thresh_loc = GetShaderLocation(hmap_material.shader, "snow_threshold");
+    int shader_gain_loc = GetShaderLocation(hmap_material.shader, "gain");
+    int shader_view_mode = 0;
+    float shader_snow_thresh = 0.002;
+    float shader_gain = 1.65;
+    SetShaderValue(hmap_material.shader, shader_view_mode_loc, &shader_view_mode, SHADER_UNIFORM_INT);
+    SetShaderValue(hmap_material.shader, shader_snow_thresh_loc, &shader_snow_thresh, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(hmap_material.shader, shader_gain_loc, &shader_gain, SHADER_UNIFORM_FLOAT);
 
     /* Camera controls */
     Vector2 mouse = Vector2Zero();
@@ -133,8 +139,8 @@ void *ui_run(void *args)
         
         /* view mode */
         if (IsKeyPressed(KEY_V)) {
-            view_mode = (view_mode + 1) % 8;
-            SetShaderValue(hmap_material.shader, shader_view_mode_loc, &view_mode, SHADER_UNIFORM_INT);
+            shader_view_mode = (shader_view_mode + 1) % 8;
+            SetShaderValue(hmap_material.shader, shader_view_mode_loc, &shader_view_mode, SHADER_UNIFORM_INT);
         } 
 
         /* handle closing */
@@ -178,6 +184,17 @@ void *ui_run(void *args)
         Vector2 mouse_delta = GetMouseDelta();
         if (IsMouseButtonDown(1)) {
             gain -= 0.1f*mouse_delta.y;
+        }
+
+        /* "snow" threshold adjustment */
+        if (IsMouseButtonDown(2)) {
+            if (IsKeyDown(KEY_LEFT_CONTROL)) {
+                shader_gain -= 0.01f*mouse_delta.y;
+                SetShaderValue(hmap_material.shader, shader_gain_loc, &shader_gain, SHADER_UNIFORM_FLOAT);
+            } else {
+                shader_snow_thresh -= 0.00001f*mouse_delta.y;
+                SetShaderValue(hmap_material.shader, shader_snow_thresh_loc, &shader_snow_thresh, SHADER_UNIFORM_FLOAT);
+            }
         }
 
         /* camera movement */
@@ -229,13 +246,13 @@ void *ui_run(void *args)
             DrawText(TextFormat("E - reload simulation parameters from file"), 10, 140, 30, BLACK);
             DrawText(TextFormat("P - projection mode (%s)", (camera.projection == CAMERA_PERSPECTIVE) ? 
                                 "perspective" : "orthographic"), 10, 170, 30, BLACK);
-            DrawText(TextFormat("V - Cycle between view modes (%d)", view_mode + 1), 10, 200, 30, BLACK);
+            DrawText(TextFormat("V - Cycle between view modes (%d)", shader_view_mode + 1), 10, 200, 30, BLACK);
             DrawText(TextFormat("Enter/Space - run erosion simulation"), 10, 230, 30, BLACK);
             DrawText(TextFormat("S - Save image"), 10, 260, 30, BLACK);
             DrawText(TextFormat("Esc/Q - exit"), 10, 290, 30, BLACK);
 
             /* Section "Image Resolution" */
-            const int ypos = screen_height - 470;
+            const int ypos = screen_height - 500;
             DrawText("Image Resolution:", 10, ypos, 38, BLACK);
             DrawText(TextFormat("%dx%d (previewed as 256x256)", hmap->width, hmap->height), 10, ypos + 40, 30, BLACK);
 
@@ -261,6 +278,8 @@ void *ui_run(void *args)
             DrawText(TextFormat("= %f", sim_params->p_deposition), 300, ypos + 380, 30, BLACK);
             DrawText("p_min_slope  ", 10, ypos + 410, 30, BLACK); 
             DrawText(TextFormat("= %f", sim_params->p_min_slope), 300, ypos + 410, 30, BLACK);
+            DrawText("p_initial_velocity  ", 10, ypos + 440, 30, BLACK); 
+            DrawText(TextFormat("= %f", sim_params->p_initial_velocity), 300, ypos + 440, 30, BLACK);
         EndDrawing();
     }
 

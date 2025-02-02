@@ -146,17 +146,19 @@ void erosion_sim_run(ErodrImage *hmap, SimulationParameters *params) {
     srand(time(NULL));
 
     /* simulate each particle */
+    printf("Starting simulation.\n");
     #pragma omp parallel for
     for(int i = 0; i < params->n; i++) {
-        if(!((i+1) % 10000))
-            printf("Particles simulated: %d\n", i+1);
+        if((i % 10000) == 0) {
+            printf("Particles simulated: %d\n", i);
+        }
 
         /* spawn particle. */
         Particle p;
         float denom = (RAND_MAX / ((float)hmap->width - 1.0f));
         p.pos = (Vec2){(float)rand() / denom, (float)rand() / denom}; 
         p.dir = (Vec2){0, 0};
-        p.vel = 0;
+        p.vel = params->p_initial_velocity;
         p.sediment = 0;
         p.water = 1;
 
@@ -177,9 +179,10 @@ void erosion_sim_run(ErodrImage *hmap, SimulationParameters *params) {
 
             /* check bounds */
             Vec2 pos_new = p.pos;
-            if(pos_new.x > (hmap->width-1) || pos_new.x < 0 || 
-                    pos_new.y > (hmap->height-1) || pos_new.y < 0)
+            if (pos_new.x > (hmap->width-1)  || pos_new.x < 0 || 
+                pos_new.y > (hmap->height-1) || pos_new.y < 0) {
                 break;
+            }
 
             /* new height */
             float h_new = bilerp_map(hmap, pos_new);
@@ -205,4 +208,5 @@ void erosion_sim_run(ErodrImage *hmap, SimulationParameters *params) {
             p.water *= (1 - params->p_evaporation);
         }   
     }
+    printf("Simulation finished.\n");
 }
