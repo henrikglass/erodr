@@ -256,7 +256,6 @@ void *ui_run(void *args)
             EndMode3D();
         
             /* Section "Commands" */
-            DrawFPS(screen_width - 100, 10);
             DrawText("Simulation Controls: ", 10, 10, 38, BLACK);
             DrawText(TextFormat("R - reset heightmap"), 10, 50, 24, BLACK);
             DrawText(TextFormat("E - reload simulation parameters from file"), 10, 80, 24, BLACK);
