@@ -109,17 +109,14 @@ void *ui_run(void *args)
     int shader_res_loc          = GetShaderLocation(hmap_material.shader, "res");
     int shader_snow_thresh_loc  = GetShaderLocation(hmap_material.shader, "snow_threshold");
     int shader_snow_pooling_loc = GetShaderLocation(hmap_material.shader, "snow_pooling");
-    int shader_brightness_loc   = GetShaderLocation(hmap_material.shader, "brightness");
     int shader_mode           = 0;
     float shader_res          = (float) hmap->width;
     float shader_snow_thresh  = 0.002f;
-    float shader_snow_pooling = 3.000f;
-    float shader_brightness   = 2.09f;
+    float shader_snow_pooling = 6.000f;
     SetShaderValue(hmap_material.shader, shader_mode_loc, &shader_mode, SHADER_UNIFORM_INT);
     SetShaderValue(hmap_material.shader, shader_res_loc, &shader_res, SHADER_UNIFORM_FLOAT);
     SetShaderValue(hmap_material.shader, shader_snow_thresh_loc, &shader_snow_thresh, SHADER_UNIFORM_FLOAT);
     SetShaderValue(hmap_material.shader, shader_snow_pooling_loc, &shader_snow_pooling, SHADER_UNIFORM_FLOAT);
-    SetShaderValue(hmap_material.shader, shader_brightness_loc, &shader_brightness, SHADER_UNIFORM_FLOAT);
 
     /* Camera controls */
     Vector2 mouse = Vector2Zero();
@@ -131,6 +128,7 @@ void *ui_run(void *args)
 
     while (running) {
         /* ====== update ================================ */
+        float dt = GetFrameTime();
 
         /* handle resizing */
         if (IsWindowResized() && !IsWindowFullscreen()) {
@@ -155,7 +153,7 @@ void *ui_run(void *args)
         
         /* view mode */
         if (IsKeyPressed(KEY_V)) {
-            shader_mode = (shader_mode + 1) % 4;
+            shader_mode = (shader_mode + 1) % 5;
             SetShaderValue(hmap_material.shader, shader_mode_loc, &shader_mode, SHADER_UNIFORM_INT);
         } 
 
@@ -206,7 +204,7 @@ void *ui_run(void *args)
         if (IsMouseButtonDown(2)) {
             if (IsKeyDown(KEY_LEFT_SHIFT)) {
                 shader_snow_pooling -= 0.01f*mouse_delta.y;
-                shader_snow_pooling = clamp(shader_snow_pooling, 1.0, 10.0);
+                shader_snow_pooling = clamp(shader_snow_pooling, 1.0, 25.0);
                 SetShaderValue(hmap_material.shader, shader_snow_pooling_loc, &shader_snow_pooling, SHADER_UNIFORM_FLOAT);
             } else {
                 shader_snow_thresh -= 0.00001f*mouse_delta.y;
@@ -223,8 +221,10 @@ void *ui_run(void *args)
         Vector3 vcam = Vector3Subtract(camera.position, camera.target);
         vcam = Vector3RotateByAxisAngle(vcam, camera.up, -mouse.x / 360.0f);
         vcam = Vector3RotateByAxisAngle(vcam, Vector3CrossProduct(vcam, camera.up), mouse.y / 360.0f);
-        camera.position = Vector3Add(camera.target, vcam);
-        mouse = Vector2Scale(mouse, PAN_INERTIA);
+        if (fabsf(Vector3DotProduct(Vector3Normalize(vcam), camera.up)) < 0.999f) {
+            camera.position = Vector3Add(camera.target, vcam);
+        }
+        mouse = Vector2Scale(mouse, (1.0f - dt)*PAN_INERTIA); // close enough...
 
         /* camera zoom */
         float zoom_delta = GetMouseWheelMove();
@@ -233,7 +233,11 @@ void *ui_run(void *args)
         }
         Vector3 view_dir = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
         camera.position = Vector3Add(camera.position, Vector3Scale(view_dir, 3*zoom));
-        zoom *= ZOOM_INERTIA;
+        if (Vector3Length(Vector3Subtract(camera.target, camera.position)) < 10.0) {
+            camera.position = Vector3Add(camera.target, Vector3Scale(view_dir, -10.0));
+            zoom = 0;
+        }
+        zoom *= (1.0f - dt) * ZOOM_INERTIA; // close enough...
 
         /* update mesh & texture */
         for (int y = 0; y < MESH_RES; y++) {

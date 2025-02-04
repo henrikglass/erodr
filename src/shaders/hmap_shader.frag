@@ -16,43 +16,54 @@ out vec4 finalColor;
 
 void main()
 {
+    /* raw albedo */
     float v = texture(texture0, fragTexCoord).r;
+
+    /* gradient */
+    float s0 = texture(texture0, fragTexCoord - 0.5 * vec2(1.0/res)).r;
+    float d1 = abs(s0 - texture(texture0, fragTexCoord + 0.5 * vec2(0, 1.0/res)).r);
+    float d2 = abs(s0 - texture(texture0, fragTexCoord + 0.5 * vec2(1.0/res, 0)).r);
+    float gradient = sqrt(d1*d1 + d2*d2);
 
     switch (mode) {
         /* snow cover visualizer */
         case 0: {
-            float s0 = texture(texture0, fragTexCoord - 0.5*snow_pooling * vec2(1.0/res)).r;
-            float s1 = texture(texture0, fragTexCoord + 0.5*snow_pooling * vec2(0, 1.0/res)).r;
-            float s2 = texture(texture0, fragTexCoord + 0.5*snow_pooling * vec2(1.0/res, 0)).r;
-            float d1 = abs(s0 - s1);
-            float d2 = abs(s0 - s2);
-            float slope = d1 + d2;
+            /* gradient adjusted for snow pooling (samples further away) */
+            s0 = texture(texture0, fragTexCoord - 0.5*snow_pooling * vec2(1.0/res)).r;
+            d1 = abs(s0 - texture(texture0, fragTexCoord + 0.5*snow_pooling * vec2(0, 1.0/res)).r);
+            d2 = abs(s0 - texture(texture0, fragTexCoord + 0.5*snow_pooling * vec2(1.0/res, 0)).r);
+            float snow_gradient = sqrt(d1*d1 + d2*d2);
 
-            //vec4 vv = brightness * vec4(0.4 + 0.6*v, 0.35 + 0.65*v, 0.3+0.7*v, 1.0f);
-            vec4 vv = brightness * vec4(v, v, v, 1.0f);
-            vv.w = 1.0;
-            if (slope > snow_pooling*snow_threshold) {
-                finalColor = vec4(0.40,0.36,0.30,1.0) * vv;
+            if (snow_gradient >= snow_pooling*snow_threshold) {
+                finalColor = vec4(0.40,0.36,0.30,1.0);
+                finalColor = vec4(10*pow(gradient, 1.0/2.2)) * finalColor + 0.15*finalColor;
             } else {
-                finalColor = vec4(1.0,1.0,1.0,1.0);// * vv;
-            } 
+                finalColor = vec4(0.7) + 0.6*vec4(v, v, 0.2+0.80*v, 1.0f);
+            }
         } break;
 
-        /* grayscale */
+        /* raw albedo */
         case 1: {
-            finalColor = vec4(v, v, v, 1.0);
+            finalColor = vec4(v);
         } break;
 
-        /* grayscale * grayscale */
+        /* exaggerated albedo */
         case 2: {
-            finalColor = vec4(v*v, v*v, v*v, 1.0);
+            finalColor = vec4(5*pow(v, 4.2));
         } break;
 
-        /* pseudo coloring */
+        /* grayscale gradient */
         case 3: {
-            float r = cos(2*PI * (v));
-            float g = cos(2*PI * (0.667 + v));
-            float b = cos(2*PI * (2*0.667 + v));
+            finalColor = vec4(5*pow(gradient, 1.0/2.2));
+        } break;
+
+        /* pseudo coloring gradient */
+        case 4: {
+            float flattened_gradient = pow(gradient, 1.0/2.2);
+            float rate = 4;
+            float r = cos(2*PI * (rate*flattened_gradient));
+            float g = cos(2*PI * (0.667 + rate*flattened_gradient));
+            float b = cos(2*PI * (2*0.667 + rate*flattened_gradient));
             finalColor = vec4(r*r, g*g, b*b, 1.0);
         } break;
 
@@ -61,5 +72,7 @@ void main()
         }
     }
 
+    finalColor.w = 1.0;
 }
+
 

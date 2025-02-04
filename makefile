@@ -1,10 +1,10 @@
 
-.PHONY: build clean linux linux-omp windows windows-omp
+.PHONY: build clean linux linux-omp windows windows-omp shaders
 
 SHELL     	    := /bin/bash
 TARGET    	    := erodr
 C_FLAGS   		:= -Werror -Wall -Wextra -Wno-unknown-pragmas -pedantic --std=c17 -Iinclude -Isrc -O3 -ggdb3
-L_FLAGS_LINUX   := -Llib/linux -lm -lpthread -lraylib
+L_FLAGS_LINUX   := -Llib/linux -lm -lpthread -lraylib -ldl
 L_FLAGS_WINDOWS := -Llib/windows -lm -lpthread -lraylib -lwinmm -mwindows -static
 
 SOURCE_FILES := src/io.c          \
@@ -14,19 +14,18 @@ SOURCE_FILES := src/io.c          \
 				src/main.c
 
 all: 
-	make shaders
 	make linux-omp
 
-linux:
+linux: shaders
 	gcc $(C_FLAGS) $(SOURCE_FILES) -o $(TARGET) $(L_FLAGS_LINUX)
 	 
-linux-omp:
+linux-omp: shaders
 	gcc $(C_FLAGS) -fopenmp $(SOURCE_FILES) -o $(TARGET) $(L_FLAGS_LINUX)
 
-windows:
+windows: shaders
 	x86_64-w64-mingw32-gcc $(C_FLAGS) $(SOURCE_FILES) -o $(TARGET).exe $(L_FLAGS_WINDOWS)
 
-windows-omp:
+windows-omp: shaders
 	x86_64-w64-mingw32-gcc $(C_FLAGS) -fopenmp $(SOURCE_FILES) -o $(TARGET).exe $(L_FLAGS_WINDOWS)
 
 shaders:
