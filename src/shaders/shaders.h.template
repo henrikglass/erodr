@@ -7,6 +7,7 @@
 
 static const char SHADERS_HMAP_FRAG_SRC[] = {
     @embed src/shaders/hmap_shader.frag
+    , 0
 };
 
 #endif /* SHADERS_H */
