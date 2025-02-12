@@ -1,27 +1,35 @@
 
-.PHONY: build clean linux linux-omp windows windows-omp
+.PHONY: build clean linux linux-omp windows windows-omp shaders
 
-SHELL     := /bin/bash
-TARGET    := erodr
-C_FLAGS   := -Werror -Wall -Wextra -Wno-unknown-pragmas -pedantic --std=c17 -Iinclude -O3 -ggdb3
-L_FLAGS   := -lm
+SHELL     	    := /bin/bash
+TARGET    	    := erodr
+C_FLAGS   		:= -Werror -Wall -Wextra -Wno-unknown-pragmas -pedantic --std=c17 -Iinclude -Isrc -O3 -ggdb3
+L_FLAGS_LINUX   := -Llib/linux -lm -lpthread -lraylib -ldl
+L_FLAGS_WINDOWS := -Llib/windows -lm -lpthread -lraylib -lwinmm -mwindows -static
 
-all: linux-omp
+SOURCE_FILES := src/io.c          \
+				src/image.c       \
+				src/ui.c 		  \
+				src/erosion_sim.c \
+				src/main.c
 
-linux:
-	gcc $(C_FLAGS) src/erodr.c src/io.c src/image.c src/util.c -o $(TARGET) $(L_FLAGS)
+all: 
+	make linux-omp
+
+linux: shaders
+	gcc $(C_FLAGS) $(SOURCE_FILES) -o $(TARGET) $(L_FLAGS_LINUX)
 	 
-linux-omp:
-	gcc $(C_FLAGS) -fopenmp src/erodr.c src/io.c src/image.c src/util.c -o $(TARGET) $(L_FLAGS)
+linux-omp: shaders
+	gcc $(C_FLAGS) -fopenmp $(SOURCE_FILES) -o $(TARGET) $(L_FLAGS_LINUX)
 
-linux-musl:
-	musl-gcc $(C_FLAGS) src/erodr.c src/io.c src/image.c src/util.c -o $(TARGET) $(L_FLAGS) -static
-	 
-windows:
-	x86_64-w64-mingw32-gcc $(C_FLAGS) src/erodr.c src/io.c src/image.c src/util.c -o $(TARGET).exe $(L_FLAGS)
+windows: shaders
+	x86_64-w64-mingw32-gcc $(C_FLAGS) $(SOURCE_FILES) -o $(TARGET).exe $(L_FLAGS_WINDOWS)
 
-windows-omp:
-	x86_64-w64-mingw32-gcc $(C_FLAGS) -fopenmp src/erodr.c src/io.c src/image.c src/util.c -o $(TARGET).exe $(L_FLAGS)
+windows-omp: shaders
+	x86_64-w64-mingw32-gcc $(C_FLAGS) -fopenmp $(SOURCE_FILES) -o $(TARGET).exe $(L_FLAGS_WINDOWS)
+
+shaders:
+	tools/gept -i src/shaders/shaders.h.template > src/shaders/shaders.h
 
 clean:
 	-rm $(TARGET)

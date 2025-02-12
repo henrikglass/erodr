@@ -1,13 +1,15 @@
+
+#include "erosion_sim.h"
+#include "vector.h"
+
 #include <time.h>
 #include <string.h>
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "vector.h"
-#include "io.h"
-#include "image.h"
-#include "params.h"
-#include "util.h"
+
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 /*
  * Particle type.
@@ -31,7 +33,7 @@ typedef struct HeigthGradientTuple {
 /*
  * Bilinearly interpolate float value at (x, y) in map.
  */
-float bilerp_map(Image *hmap, Vec2 pos) {
+float bilerp_map(ErodrImage *hmap, Vec2 pos) {
     float u, v, ul, ur, ll, lr, ipl_l, ipl_r;
     int x_i = (int)pos.x;
     int y_i = (int)pos.y;
@@ -51,7 +53,7 @@ float bilerp_map(Image *hmap, Vec2 pos) {
  * Deposition only affect immediate neighbouring gridpoints
  * to `pos`.
  */
-void deposit(Image *hmap, Vec2 pos, float amount) {
+void deposit(ErodrImage *hmap, Vec2 pos, float amount) {
     int x_i = (int)pos.x;
     int y_i = (int)pos.y;
     float u = pos.x - x_i;
@@ -66,7 +68,7 @@ void deposit(Image *hmap, Vec2 pos, float amount) {
  * Erodes heighmap `hmap` at position `pos` by amount `amount`.
  * Erosion is distributed over an area defined through p_radius.
  */
-void erode(Image *hmap, Vec2 pos, float amount, int radius) {  
+void erode(ErodrImage *hmap, Vec2 pos, float amount, int radius) {  
     if(radius < 1){
         deposit(hmap, pos, -amount);
         return;
@@ -74,12 +76,12 @@ void erode(Image *hmap, Vec2 pos, float amount, int radius) {
 
     int x0 = (int)pos.x - radius;
     int y0 = (int)pos.y - radius;
-    int x_start = max(0, x0);
-    int y_start = max(0, y0);
-    int x_end = min(hmap->width, x0+2*radius+1);
-    int y_end = min(hmap->height, y0+2*radius+1);
+    int x_start = MAX(0, x0);
+    int y_start = MAX(0, y0);
+    int x_end = MIN(hmap->width, x0+2*radius+1);
+    int y_end = MIN(hmap->height, y0+2*radius+1);
 
-    // construct erosion/deposition kernel.
+    /* construct erosion/deposition kernel. */
     float kernel[2*radius + 1][2*radius + 1];
     float kernel_sum = 0;
     for(int y = y_start; y < y_end; y++) {
@@ -93,7 +95,7 @@ void erode(Image *hmap, Vec2 pos, float amount, int radius) {
         }   
     }
 
-    // normalize weights and apply changes on heighmap.
+    /* normalize weights and apply changes on heighmap. */
     for(int y = y_start; y < y_end; y++) {
         for(int x = x_start; x < x_end; x++) {
             kernel[y-y0][x-x0] /= kernel_sum;
@@ -105,10 +107,8 @@ void erode(Image *hmap, Vec2 pos, float amount, int radius) {
 /*
  * Returns gradient at (int x, int y) on heightmap `hmap`.
  */
-Vec2 gradient_at(Image *hmap, int x, int y) {
+Vec2 gradient_at(ErodrImage *hmap, int x, int y) {
     int idx = y * hmap->width + x;
-    //int right = y * hmap->width + min(x, hmap->width - 2);
-    //int below = min(y, hmap->height - 2) * hmap->width + x;
     int right = idx + ((x > hmap->width - 2) ? 0 : 1);
     int below = idx + ((y > hmap->height - 2) ? 0 : hmap->width);
     Vec2 g;
@@ -121,7 +121,7 @@ Vec2 gradient_at(Image *hmap, int x, int y) {
  * Returns interpolated gradient and height at (float x, float y) on
  * heightmap `hmap`.
  */
-HeigthGradientTuple height_gradient_at(Image *hmap, Vec2 pos) {
+HeigthGradientTuple height_gradient_at(ErodrImage *hmap, Vec2 pos) {
     HeigthGradientTuple ret;
     Vec2 ul, ur, ll, lr, ipl_l, ipl_r;
     int x_i = (int)pos.x;
@@ -142,53 +142,56 @@ HeigthGradientTuple height_gradient_at(Image *hmap, Vec2 pos) {
 /*
  * Runs hydraulic erosion simulation.
  */
-void simulate_particles(Image *hmap, SimulationParameters *params) {
+void erosion_sim_run(ErodrImage *hmap, SimulationParameters *params) {
     srand(time(NULL));
 
-    // simulate each particle
+    /* simulate each particle */
+    printf("Starting simulation.\n");
     #pragma omp parallel for
     for(int i = 0; i < params->n; i++) {
-        if(!((i+1) % 10000))
-            printf("Particles simulated: %d\n", i+1);
+        if((i % 10000) == 0) {
+            printf("Particles simulated: %d\n", i);
+        }
 
-        // spawn particle.
+        /* spawn particle. */
         Particle p;
         float denom = (RAND_MAX / ((float)hmap->width - 1.0f));
         p.pos = (Vec2){(float)rand() / denom, (float)rand() / denom}; 
         p.dir = (Vec2){0, 0};
-        p.vel = 0;
+        p.vel = params->p_initial_velocity;
         p.sediment = 0;
-        p.water = 1;
+        p.water = params->p_initial_water;
 
         for(int j = 0; j < params->ttl; j++) {
-            // interpolate gradient g and height h_old at p's position. 
+            /* interpolate gradient g and height h_old at p's position. */
             Vec2 pos_old = p.pos;
             HeigthGradientTuple hg = height_gradient_at(hmap, pos_old);
             Vec2 g = hg.gradient;
             float h_old = hg.height; 
 
-            // calculate new dir vector
-            p.dir = vec2_sub(vec2_scalar_mul(params->p_enertia, p.dir),
-                             vec2_scalar_mul(1 - params->p_enertia, g));
+            /* calculate new dir vector */
+            p.dir = vec2_sub(vec2_scalar_mul(params->p_inertia, p.dir),
+                             vec2_scalar_mul(1 - params->p_inertia, g));
             p.dir = vec2_normalize(p.dir);
 
-            // calculate new pos
+            /* calculate new pos */
             p.pos = vec2_add(p.pos, p.dir);
 
-            // check bounds
+            /* check bounds */
             Vec2 pos_new = p.pos;
-            if(pos_new.x > (hmap->width-1) || pos_new.x < 0 || 
-                    pos_new.y > (hmap->height-1) || pos_new.y < 0)
+            if (pos_new.x > (hmap->width-1)  || pos_new.x < 0 || 
+                pos_new.y > (hmap->height-1) || pos_new.y < 0) {
                 break;
+            }
 
-            // new height
+            /* new height */
             float h_new = bilerp_map(hmap, pos_new);
             float h_diff = h_new - h_old;
 
-            // sediment capacity
+            /* sediment capacity */
             float c = fmaxf(-h_diff, params->p_min_slope) * p.vel * p.water * params->p_capacity;
 
-            // decide whether to erode or deposit depending on particle properties
+            /* decide whether to erode or deposit depending on particle properties */
             if(h_diff > 0 || p.sediment > c) {
                 float to_deposit = (h_diff > 0) ? fminf(p.sediment, h_diff) :
                                                   (p.sediment - c) * params->p_deposition;
@@ -200,45 +203,10 @@ void simulate_particles(Image *hmap, SimulationParameters *params) {
                 erode(hmap, pos_old, to_erode, params->p_radius);
             }
 
-            // update `vel` and `water`
+            /* update `vel` and `water` */
             p.vel = sqrt(p.vel*p.vel + h_diff*params->p_gravity);
             p.water *= (1 - params->p_evaporation);
         }   
     }
-}
-
-/*
- * Main.
- */
-int main(int argc, char *argv[]) {
-    SimulationParameters params = DEFAULT_PARAM;  
-    Image img;
-
-    // parse args.
-    char filepath[IO_FILEPATH_MAXLEN];
-    char outputfilepath[IO_FILEPATH_MAXLEN];
-    strcpy(outputfilepath, IO_OUTPUTFILEPATH_DEFAULT);
-    bool ascii_out = false;
-    if(io_parse_args(argc, argv, filepath, outputfilepath, &params, &ascii_out)) {
-        exit_with_info(1);
-    }
-
-    // load pgm heightmap.
-    if(io_load_pgm(filepath, &img)) {
-        exit_with_info(1);
-    }
-
-    // simulate hydraulic erosion
-    simulate_particles(&img, &params);
-
-    // Maybe clamp
-    if (image_clamp(&img)) {
-        print_clipping_warning();
-    }
-
-    // Save results 
-    io_save_pgm(outputfilepath, &img, ascii_out);
-
-    // free memory
-    image_free(&img);    
+    printf("Simulation finished.\n");
 }
