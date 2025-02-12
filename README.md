@@ -1,7 +1,7 @@
 # Erodr
 Erodr is an implementation of Hans Theobald Beyer's algorithm for simulated hydraulic erosion of landscapes. The algorithm is described in detail in his his thesis *Implementation of a method for hydraulic erosion* which can be found [here](https://ardordeosis.github.io/implementation-of-a-method-for-hydraulic-erosion/thesis-beyer.pdf).
 
-![erodr.png](https://github.com/henrikglass/erodr/blob/visualizer/examples/erodr.png?raw=true)
+![erodr.png](https://github.com/henrikglass/erodr/blob/master/examples/erodr.png?raw=true)
 This image shows a 1024x1024 heightmap after being processed inside the Erodr visualizer/live preview window.
 
 Link to a video demo of Erodr: https://www.youtube.com/watch?v=jiTiTiV2hcU
