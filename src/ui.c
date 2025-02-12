@@ -125,6 +125,7 @@ void *ui_run(void *args)
     /* misc */
     float terrain_height = 16.0f;
     bool running = true;
+    bool show_controls = true;
 
     while (running) {
         /* ====== update ================================ */
@@ -149,6 +150,11 @@ void *ui_run(void *args)
         /* save image */
         if (IsKeyPressed(KEY_S)) {
             hgl_chan_send(c, (void *)CMD_SAVE_HMAP);
+        }
+
+        /* hide controls */
+        if (IsKeyPressed(KEY_H)) {
+            show_controls = !show_controls;
         }
         
         /* view mode */
@@ -259,55 +265,59 @@ void *ui_run(void *args)
                 DrawMesh(hmap_mesh, hmap_material, hmap_tform);
             EndMode3D();
         
-            /* Section "Commands" */
-            DrawText("Simulation Controls: ", 10, 10, 38, BLACK);
-            DrawText(TextFormat("R - reset heightmap"), 10, 50, 24, BLACK);
-            DrawText(TextFormat("E - reload simulation parameters from file"), 10, 80, 24, BLACK);
-            DrawText(TextFormat("Enter/Space - run erosion simulation"), 10, 110, 24, BLACK);
-            DrawText(TextFormat("S - Save image"), 10, 140, 24, BLACK);
-            DrawText(TextFormat("Esc/Q - exit"), 10, 170, 24, BLACK);
+            if (show_controls) {
+                /* Section "Commands" */
+                DrawText("Simulation Controls: ", 10, 10, 38, BLACK);
+                DrawText(TextFormat("R - reset heightmap"), 10, 50, 24, BLACK);
+                DrawText(TextFormat("E - reload simulation parameters from file"), 10, 80, 24, BLACK);
+                DrawText(TextFormat("Enter/Space - run erosion simulation"), 10, 110, 24, BLACK);
+                DrawText(TextFormat("S - Save image"), 10, 140, 24, BLACK);
+                DrawText(TextFormat("H - Show/Hide controls"), 10, 170, 24, BLACK);
+                DrawText(TextFormat("Esc/Q - exit"), 10, 200, 24, BLACK);
 
-            //int xpos = screen_width - 770;
-            DrawText("Visualization Controls:", 10, 250, 38, BLACK);
-            DrawText(TextFormat("V - Cycle between visualizer modes (%d)", shader_mode + 1), 10, 290, 24, BLACK);
-            DrawText(TextFormat("P - projection mode (%s)", (camera.projection == CAMERA_PERSPECTIVE) ? 
-                                "perspective" : "orthographic"), 10, 320, 24, BLACK);
-            DrawText(TextFormat("Left mouse button/scroll - move camera"), 10, 350, 24, BLACK);
-            DrawText(TextFormat("Middle mouse button - change snow cover (%2.5f)", shader_snow_thresh), 10, 380, 24, BLACK);
-            DrawText(TextFormat("Lshift + Middle mouse button - change snow pooling (%2.2f)", shader_snow_pooling), 10, 410, 24, BLACK);
-            DrawText(TextFormat("Right mouse button - change terrain height (%2.2f)", terrain_height), 10, 440, 24, BLACK);
+                //int xpos = screen_width - 770;
+                DrawText("Visualization Controls:", 10, 250, 38, BLACK);
+                DrawText(TextFormat("V - Cycle between visualizer modes (%d)", shader_mode + 1), 10, 290, 24, BLACK);
+                DrawText(TextFormat("P - projection mode (%s)", (camera.projection == CAMERA_PERSPECTIVE) ? 
+                                    "perspective" : "orthographic"), 10, 320, 24, BLACK);
+                DrawText(TextFormat("Left mouse button/scroll - move camera"), 10, 350, 24, BLACK);
+                DrawText(TextFormat("Middle mouse button - change snow cover (%2.5f)", shader_snow_thresh), 10, 380, 24, BLACK);
+                DrawText(TextFormat("Lshift + Middle mouse button - change snow pooling (%2.2f)", shader_snow_pooling), 10, 410, 24, BLACK);
+                DrawText(TextFormat("Right mouse button - change terrain height (%2.2f)", terrain_height), 10, 440, 24, BLACK);
 
-            /* Section "Image Resolution" */
-            int ypos = screen_height - 520;
-            DrawText("Image Resolution:", 10, ypos, 38, BLACK);
-            DrawText(TextFormat("%dx%d (previewed as 256x256)", hmap->width, hmap->height), 10, ypos + 40, 24, BLACK);
+                /* Section "Image Resolution" */
+                int ypos = screen_height - 520;
+                DrawText("Image Resolution:", 10, ypos, 38, BLACK);
+                DrawText(TextFormat("%dx%d (previewed as 256x256)", hmap->width, hmap->height), 10, ypos + 40, 24, BLACK);
 
-            /* Section "Simulation Parameters" */
-            DrawText("Simulation Parameters: ", 10, ypos + 100, 38, BLACK);
-            DrawText("# of particles", 10, ypos + 140, 24, BLACK); 
-            DrawText(TextFormat("= %d", sim_params->n), 300, ypos + 140, 24, BLACK);
-            DrawText("ttl          ", 10, ypos + 170, 24, BLACK); 
-            DrawText(TextFormat("= %d", sim_params->ttl), 300, ypos + 170, 24, BLACK);
-            DrawText("p_radius     ", 10, ypos + 200, 24, BLACK); 
-            DrawText(TextFormat("= %d", sim_params->p_radius), 300, ypos + 200, 24, BLACK);
-            DrawText("p_inertia    ", 10, ypos + 230, 24, BLACK); 
-            DrawText(TextFormat("= %f", sim_params->p_inertia), 300, ypos + 230, 24, BLACK);
-            DrawText("p_capacity   ", 10, ypos + 260, 24, BLACK); 
-            DrawText(TextFormat("= %f", sim_params->p_capacity), 300, ypos + 260, 24, BLACK);
-            DrawText("p_gravity    ", 10, ypos + 290, 24, BLACK); 
-            DrawText(TextFormat("= %f", sim_params->p_gravity), 300, ypos + 290, 24, BLACK);
-            DrawText("p_evaporation", 10, ypos + 320, 24, BLACK); 
-            DrawText(TextFormat("= %f", sim_params->p_evaporation), 300, ypos + 320, 24, BLACK);
-            DrawText("p_erosion    ", 10, ypos + 350, 24, BLACK); 
-            DrawText(TextFormat("= %f", sim_params->p_erosion), 300, ypos + 350, 24, BLACK);
-            DrawText("p_deposition ", 10, ypos + 380, 24, BLACK); 
-            DrawText(TextFormat("= %f", sim_params->p_deposition), 300, ypos + 380, 24, BLACK);
-            DrawText("p_min_slope  ", 10, ypos + 410, 24, BLACK); 
-            DrawText(TextFormat("= %f", sim_params->p_min_slope), 300, ypos + 410, 24, BLACK);
-            DrawText("p_initial_velocity  ", 10, ypos + 440, 24, BLACK); 
-            DrawText(TextFormat("= %f", sim_params->p_initial_velocity), 300, ypos + 440, 24, BLACK);
-            DrawText("p_initial_water  ", 10, ypos + 470, 24, BLACK); 
-            DrawText(TextFormat("= %f", sim_params->p_initial_water), 300, ypos + 470, 24, BLACK);
+                /* Section "Simulation Parameters" */
+                DrawText("Simulation Parameters: ", 10, ypos + 100, 38, BLACK);
+                DrawText("# of particles", 10, ypos + 140, 24, BLACK); 
+                DrawText(TextFormat("= %d", sim_params->n), 300, ypos + 140, 24, BLACK);
+                DrawText("ttl          ", 10, ypos + 170, 24, BLACK); 
+                DrawText(TextFormat("= %d", sim_params->ttl), 300, ypos + 170, 24, BLACK);
+                DrawText("p_radius     ", 10, ypos + 200, 24, BLACK); 
+                DrawText(TextFormat("= %d", sim_params->p_radius), 300, ypos + 200, 24, BLACK);
+                DrawText("p_inertia    ", 10, ypos + 230, 24, BLACK); 
+                DrawText(TextFormat("= %f", sim_params->p_inertia), 300, ypos + 230, 24, BLACK);
+                DrawText("p_capacity   ", 10, ypos + 260, 24, BLACK); 
+                DrawText(TextFormat("= %f", sim_params->p_capacity), 300, ypos + 260, 24, BLACK);
+                DrawText("p_gravity    ", 10, ypos + 290, 24, BLACK); 
+                DrawText(TextFormat("= %f", sim_params->p_gravity), 300, ypos + 290, 24, BLACK);
+                DrawText("p_evaporation", 10, ypos + 320, 24, BLACK); 
+                DrawText(TextFormat("= %f", sim_params->p_evaporation), 300, ypos + 320, 24, BLACK);
+                DrawText("p_erosion    ", 10, ypos + 350, 24, BLACK); 
+                DrawText(TextFormat("= %f", sim_params->p_erosion), 300, ypos + 350, 24, BLACK);
+                DrawText("p_deposition ", 10, ypos + 380, 24, BLACK); 
+                DrawText(TextFormat("= %f", sim_params->p_deposition), 300, ypos + 380, 24, BLACK);
+                DrawText("p_min_slope  ", 10, ypos + 410, 24, BLACK); 
+                DrawText(TextFormat("= %f", sim_params->p_min_slope), 300, ypos + 410, 24, BLACK);
+                DrawText("p_initial_velocity  ", 10, ypos + 440, 24, BLACK); 
+                DrawText(TextFormat("= %f", sim_params->p_initial_velocity), 300, ypos + 440, 24, BLACK);
+                DrawText("p_initial_water  ", 10, ypos + 470, 24, BLACK); 
+                DrawText(TextFormat("= %f", sim_params->p_initial_water), 300, ypos + 470, 24, BLACK);
+            }
+
         EndDrawing();
     }
 
