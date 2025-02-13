@@ -179,8 +179,8 @@ void erosion_sim_run(ErodrImage *hmap, SimulationParameters *params) {
 
             /* check bounds */
             Vec2 pos_new = p.pos;
-            if (pos_new.x > (hmap->width-1)  || pos_new.x < 0 || 
-                pos_new.y > (hmap->height-1) || pos_new.y < 0) {
+            if (pos_new.x > (hmap->width-2)  || pos_new.x < 1 || 
+                pos_new.y > (hmap->height-2) || pos_new.y < 1) {
                 break;
             }
 
