@@ -142,8 +142,13 @@ HeigthGradientTuple height_gradient_at(ErodrImage *hmap, Vec2 pos) {
 /*
  * Runs hydraulic erosion simulation.
  */
+#include <assert.h>
 void erosion_sim_run(ErodrImage *hmap, SimulationParameters *params) {
-    srand(time(NULL));
+    if (params->seed == 0) {
+        srand(time(NULL));
+    } else {
+        srand((unsigned int)params->seed);
+    }
 
     /* simulate each particle */
     printf("Starting simulation.\n");
@@ -155,12 +160,19 @@ void erosion_sim_run(ErodrImage *hmap, SimulationParameters *params) {
 
         /* spawn particle. */
         Particle p;
-        float denom = (RAND_MAX / ((float)hmap->width - 1.0f));
+        const float epsilon = 0.0001f;
+        float denom = (RAND_MAX / ((float)(hmap->width - 1) - epsilon));
         p.pos = (Vec2){(float)rand() / denom, (float)rand() / denom}; 
         p.dir = (Vec2){0, 0};
         p.vel = params->p_initial_velocity;
         p.sediment = 0;
         p.water = params->p_initial_water;
+
+        if (!(p.pos.x >= 0.0f && p.pos.x < (hmap->width - 1)) ||
+            !(p.pos.y >= 0.0f && p.pos.y < (hmap->height - 1))) {
+            printf("pos = {%f, %f}\n", p.pos.x, p.pos.y);
+            assert(false);
+        }
 
         for(int j = 0; j < params->ttl; j++) {
             /* interpolate gradient g and height h_old at p's position. */
@@ -178,14 +190,13 @@ void erosion_sim_run(ErodrImage *hmap, SimulationParameters *params) {
             p.pos = vec2_add(p.pos, p.dir);
 
             /* check bounds */
-            Vec2 pos_new = p.pos;
-            if (pos_new.x > (hmap->width-2)  || pos_new.x < 1 || 
-                pos_new.y > (hmap->height-2) || pos_new.y < 1) {
+            if (p.pos.x >= (hmap->width - 1.0f)  || p.pos.x <= 0.0f || 
+                p.pos.y >= (hmap->height - 1.0f) || p.pos.y <= 0.0f) {
                 break;
             }
 
             /* new height */
-            float h_new = bilerp_map(hmap, pos_new);
+            float h_new = bilerp_map(hmap, p.pos);
             float h_diff = h_new - h_old;
 
             /* sediment capacity */

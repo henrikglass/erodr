@@ -44,8 +44,9 @@ SimulationParameters io_read_params_ini(const char *filepath)
         exit(1);
     }
 
-    GET_INI_PARAM_INT(parameters, params_ini, ttl);
     GET_INI_PARAM_INT(parameters, params_ini, n);
+    GET_INI_PARAM_INT(parameters, params_ini, ttl);
+    GET_INI_PARAM_INT(parameters, params_ini, seed);
     GET_INI_PARAM_INT(parameters, params_ini, p_radius);
     GET_INI_PARAM_FLOAT(parameters, params_ini, p_inertia);
     GET_INI_PARAM_FLOAT(parameters, params_ini, p_capacity);
@@ -139,7 +140,7 @@ int io_load_pgm(const char *filepath, ErodrImage *img) {
         for(int i = 0; i < img->width * img->height; i++) {
             fread(tmp, sizeof(char), byte_depth, fp);
             int val = (byte_depth == 2) ? 
-                ((tmp[0] << 8) & 0xFF00) | (tmp[1] & 0x00FF) :
+                (((uint16_t)tmp[0] << 8) & 0xFF00) | (tmp[1] & 0x00FF) :
                 tmp[0] & 0xFF;
             data[i] = (float) val / precision;
         }

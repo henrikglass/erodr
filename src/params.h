@@ -2,6 +2,7 @@
 #define PARAMS_H
 
 #define DEFAULT_PARAM_N               70000
+#define DEFAULT_PARAM_SEED                0
 #define DEFAULT_PARAM_TTL                32
 #define DEFAULT_PARAM_RADIUS              2
 #define DEFAULT_PARAM_INERTIA             0.3
@@ -18,6 +19,7 @@
     (SimulationParameters) {                                  \
         .n                  = DEFAULT_PARAM_N,                \
         .ttl                = DEFAULT_PARAM_TTL,              \
+        .seed               = DEFAULT_PARAM_SEED,             \
         .p_radius           = DEFAULT_PARAM_RADIUS,           \
         .p_inertia          = DEFAULT_PARAM_INERTIA,          \
         .p_capacity         = DEFAULT_PARAM_CAPACITY,         \
@@ -36,6 +38,7 @@
 typedef struct SimulationParameters {
     int n;
     int ttl;
+    int seed;
     int p_radius;
     float p_inertia;
     float p_capacity;

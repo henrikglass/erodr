@@ -51,9 +51,10 @@ void main()
             /* calculate color */
             float snow_gradient = sqrt(d1*d1 + d2*d2);
             float snow_amount = clamp(remap(snow_pooling*snow_threshold,
-                                            snow_pooling*snow_threshold-0.0015,
-                                            0.0, 1.0, snow_gradient), 0, 1);
-            vec3 snow = vec3(0.7) + 0.6*vec3(v, v, 0.2+0.80*v);
+                                            snow_pooling*snow_threshold-0.0006/pow(v, 1.5),
+                                            0.0, 1.0, snow_gradient/pow(v, 1.5)), 0, 1);
+            float flattened_gradient = pow(gradient, 1.0/8.2);
+            vec3 snow = 0.5 + vec3(flattened_gradient, flattened_gradient, 0.15+0.85*flattened_gradient);
             vec3 rock = vec3(10*pow(gradient, 1.0/2.2) + 0.3) * vec3(0.40,0.36,0.30);
             finalColor = vec4(snow_amount * snow + (1.0 - snow_amount) * rock, 1.0);
         } break;
@@ -91,3 +92,5 @@ void main()
 
     finalColor.w = 1.0;
 }
+
+

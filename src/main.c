@@ -41,6 +41,7 @@ Args parse_args(int argc, char *argv[])
     const char **opt_output_filepath = hgl_flags_add_str("-o,--output", "path to output heightmap *.pgm file", "output.pgm", 0);
     const char **opt_params_filepath = hgl_flags_add_str("-p,--params", "path to simulation parameters *.ini file", NULL, 0);
     bool *opt_ascii_encode_output    = hgl_flags_add_bool("-a, --ascii", "Use ascii encoding for output *.pgm file.", false, 0);
+    int64_t *opt_seed         = hgl_flags_add_i64("--seed", "Seed for the random number generator. A value of 0 uses the current time in seconds as the seed.", DEFAULT_PARAM_SEED, 0);
     int64_t *opt_n            = hgl_flags_add_i64("-n,--num-particles", "Number of particles to simulate", DEFAULT_PARAM_N, 0);
     int64_t *opt_ttl          = hgl_flags_add_i64("-t,--ttl", "Maximum lifetime of a particle", DEFAULT_PARAM_TTL, 0);
     int64_t *opt_radius       = hgl_flags_add_i64("-r,--radius", "Particle erosion radius", DEFAULT_PARAM_RADIUS, 0);
@@ -86,6 +87,7 @@ Args parse_args(int argc, char *argv[])
 
     if (hgl_flags_occured_before(opt_params_filepath, opt_n)) args.sim_params.n = (int) *opt_n;
     if (hgl_flags_occured_before(opt_params_filepath, opt_ttl)) args.sim_params.ttl = (int) *opt_ttl;
+    if (hgl_flags_occured_before(opt_params_filepath, opt_seed)) args.sim_params.seed = (int) *opt_seed;
     if (hgl_flags_occured_before(opt_params_filepath, opt_radius)) args.sim_params.p_radius = (int) *opt_radius;
     if (hgl_flags_occured_before(opt_params_filepath, opt_inertia)) args.sim_params.p_inertia = (float) *opt_inertia;
     if (hgl_flags_occured_before(opt_params_filepath, opt_capacity)) args.sim_params.p_capacity = (float) *opt_capacity;
