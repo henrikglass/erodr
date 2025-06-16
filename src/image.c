@@ -15,6 +15,7 @@ ErodrImage image_alloc(int width, int height) {
 void image_free(ErodrImage *img) {
     free(img->data);
 }
+
 void image_copy(ErodrImage *dst, ErodrImage *src)
 {
     assert(src->width == dst->width);
