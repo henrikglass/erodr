@@ -1,3 +1,5 @@
+[![build](https://github.com/henrikglass/erodr/actions/workflows/build.yml/badge.svg)](https://github.com/henrikglass/erodr/actions/workflows/build.yml)
+
 # Erodr
 Erodr is an implementation of Hans Theobald Beyer's algorithm for simulated hydraulic erosion of landscapes. The algorithm is described in detail in his his thesis *Implementation of a method for hydraulic erosion* which can be found [here](https://ardordeosis.github.io/implementation-of-a-method-for-hydraulic-erosion/thesis-beyer.pdf).
 
