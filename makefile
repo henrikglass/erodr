@@ -3,7 +3,7 @@
 
 SHELL     	    := /bin/bash
 TARGET    	    := erodr
-C_FLAGS   		:= -Werror -Wall -Wextra -Wno-unknown-pragmas -pedantic -Wno-unused-results --std=c17 -Iinclude -Isrc -O3 -ggdb3 #-fsanitize=address -fsanitize=undefined
+C_FLAGS   		:= -Werror -Wall -Wextra -Wno-unknown-pragmas -pedantic -Wno-unused-result --std=c17 -Iinclude -Isrc -O3 -ggdb3 #-fsanitize=address -fsanitize=undefined
 L_FLAGS_LINUX   := -Llib/linux -lm -lpthread -lraylib -ldl
 L_FLAGS_WINDOWS := -Llib/windows -lm -lpthread -lraylib -lwinmm -mwindows -static
 
